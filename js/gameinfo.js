@@ -213,24 +213,23 @@ async function summary(lang, title, signal) {
 
 const capitalize = (s) => (s ? s.charAt(0).toLocaleUpperCase('nl') + s.slice(1) : s);
 
+const coreCache = new Map(); // pageid → Promise<core>
+const summaryCache = new Map(); // taal:titel → Promise<string>
+
 /**
- * Laadt alles voor één kandidaat. Onderdelen die mislukken worden
- * overgeslagen, zodat er zoveel mogelijk getoond kan worden.
+ * De "kern" van een game: boxart, scores, genre, ontwikkelaar, release.
+ * Dit is klein genoeg om in de kluis te bewaren (zie toStored in app.js).
+ * Onderdelen die mislukken worden overgeslagen.
  */
-export function loadDetails(candidate, signal) {
-  return cached(detailCache, candidate.pageid, async () => {
+export function loadCore(candidate, signal) {
+  return cached(coreCache, candidate.pageid, async () => {
     const t = withTimeout(signal);
     try {
-      // Alles wat niet van elkaar afhangt tegelijk ophalen
-      const entityP = candidate.qid
-        ? api(WIKIDATA, {
-          action: 'wbgetentities', ids: candidate.qid, props: 'claims|sitelinks', sitefilter: 'nlwiki|enwiki',
-        }, t.signal).then((j) => j?.entities?.[candidate.qid] || null).catch(() => null)
-        : Promise.resolve(null);
-      const nlP = candidate.nlTitle ? summary('nl', candidate.nlTitle, t.signal).catch(() => '') : null;
-      const enP = summary('en', candidate.title, t.signal).catch(() => '');
-
-      const entity = await entityP;
+      const entity = candidate.qid
+        ? await api(WIKIDATA, {
+          action: 'wbgetentities', ids: candidate.qid, props: 'claims|sitelinks', sitefilter: 'nlwiki',
+        }, t.signal).then((j) => j?.entities?.[candidate.qid] || null)
+        : null;
       const claims = entity?.claims || {};
       const nlTitle = candidate.nlTitle || entity?.sitelinks?.nlwiki?.title || '';
 
@@ -240,45 +239,40 @@ export function loadDetails(candidate, signal) {
         ...factProps.flatMap((k) => ids(claims, P[k])),
         ...reviews.flatMap((r) => [r.by, r.platform]).filter(Boolean),
       ];
-      // Geen Metacritic op Wikidata? Dan meteen ook de recensietabel van Wikipedia.
+      // Geen Metacritic op Wikidata? Dan tegelijk ook de recensietabel van Wikipedia.
       const needWikitext = !reviews.some((r) => r.by === 'Q150248');
-
-      const [names, nlText, enText, wt] = await Promise.all([
-        wanted.length ? labels(wanted, t.signal).catch(() => new Map()) : new Map(),
-        nlP || (nlTitle ? summary('nl', nlTitle, t.signal).catch(() => '') : ''),
-        enP,
+      const [names, wt] = await Promise.all([
+        wanted.length ? labels(wanted, t.signal) : new Map(),
         needWikitext ? scoresFromWikitext(candidate.title, t.signal).catch(() => null) : null,
       ]);
 
       const facts = {};
       for (const k of factProps) {
         facts[k] = [...new Set(ids(claims, P[k]).map((id) => names.get(id)).filter(Boolean))]
-          .map((s) => (k === 'genre' || k === 'modes' ? capitalize(s) : s));
+          .slice(0, 4)
+          .map((x) => (k === 'genre' || k === 'modes' ? capitalize(x) : x));
       }
 
       // Scores: Metacritic, of anders GameRankings (vaak de enige voor retro-games)
-      const byOutlet = (re) => reviews
-        .filter((r) => re.test(names.get(r.by) || '') || (re.source.includes('metacritic') && r.by === 'Q150248'))
+      const byOutlet = (re, qid) => reviews
+        .filter((r) => r.by === qid || re.test(names.get(r.by) || ''))
         .map((r) => ({ score: toPercent(r.value), platform: names.get(r.platform) || '' }))
         .filter((r) => r.score != null && r.score <= 100)
         .sort((a, b) => b.score - a.score);
-      let metacritic = byOutlet(/metacritic/i);
-      let gamerankings = byOutlet(/gamerankings/i);
-      if (!metacritic.length) {
-        if (wt?.metacritic != null) metacritic = [{ score: wt.metacritic, platform: '' }];
-        if (!gamerankings.length && wt?.gamerankings != null) gamerankings = [{ score: wt.gamerankings, platform: '' }];
-      }
+      let metacritic = byOutlet(/metacritic/i, 'Q150248');
+      let gamerankings = byOutlet(/gamerankings/i, '');
+      if (!metacritic.length && wt?.metacritic != null) metacritic = [{ score: wt.metacritic, platform: '' }];
+      if (!gamerankings.length && wt?.gamerankings != null) gamerankings = [{ score: wt.gamerankings, platform: '' }];
       // Eén score per platform
-      const dedupe = (list) => list.filter((r, i) => list.findIndex((x) => x.platform === r.platform) === i);
+      const dedupe = (list) => list.filter((r, i) => list.findIndex((x) => x.platform === r.platform) === i).slice(0, 5);
 
-      const useNl = Boolean(nlText);
       return {
+        pageid: candidate.pageid,
         title: candidate.title,
-        description: candidate.description,
-        image: candidate.thumb,
-        summary: nlText || enText,
-        summaryLang: useNl ? 'nl' : 'en',
-        wikiUrl: useNl ? wikiUrl('nl', nlTitle) : wikiUrl('en', candidate.title),
+        qid: candidate.qid || '',
+        nlTitle,
+        description: candidate.description || '',
+        image: candidate.thumb || '',
         release: firstRelease(claims),
         facts,
         metacritic: dedupe(metacritic),
@@ -290,17 +284,47 @@ export function loadDetails(candidate, signal) {
   });
 }
 
+/** Samenvatting: Nederlands als er een Nederlands artikel is, anders Engels. */
+export function loadSummary(core, signal) {
+  const key = `${core.nlTitle}|${core.title}`;
+  return cached(summaryCache, key, async () => {
+    const t = withTimeout(signal);
+    try {
+      const [nl, en] = await Promise.all([
+        core.nlTitle ? summary('nl', core.nlTitle, t.signal).catch(() => '') : '',
+        summary('en', core.title, t.signal).catch(() => ''),
+      ]);
+      if (!nl && !en) throw new Error('Geen samenvatting');
+      return nl
+        ? { text: nl, lang: 'nl', url: wikiUrl('nl', core.nlTitle) }
+        : { text: en, lang: 'en', url: wikiUrl('en', core.title) };
+    } finally {
+      t.done();
+    }
+  });
+}
+
+/** Wikipedia-link voor een (bewaarde) kern. */
+export const coreWikiUrl = (core) => (core.nlTitle ? wikiUrl('nl', core.nlTitle) : wikiUrl('en', core.title));
+
 /**
  * Alvast beginnen met laden zodra je een game aanraakt, zodat het
  * detailscherm (vrijwel) klaar is als het opent.
  */
-export function prefetch(game) {
-  findCandidates(game)
+export function prefetch(game, stored) {
+  const start = stored?.pageid ? Promise.resolve([candidateFrom(stored)]) : findCandidates(game);
+  start
     .then((list) => {
       const best = list[0];
       if (!best) return;
       if (best.thumb) new Image().src = best.thumb;
-      loadDetails(best).catch(() => {});
+      loadCore(best).then((core) => loadSummary(core)).catch(() => {});
     })
     .catch(() => {});
 }
+
+/** Maakt van bewaarde info weer een kandidaat (zonder opnieuw te zoeken). */
+export const candidateFrom = (info) => ({
+  pageid: info.pageid, title: info.title, qid: info.qid || '', nlTitle: info.nlTitle || '',
+  description: info.description || '', thumb: safeImage(info.image),
+});

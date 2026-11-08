@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0
+
+- Nieuw: de Metascore staat nu als gekleurd blokje rechts in elke rij van de lijst (groen 75+, geel 50–74, rood daaronder). Heeft een oudere game geen Metascore, dan zie je de GameRankings-score als omlijnd blokje.
+- Nieuw: sorteren op "Metascore", hoogste eerst; games zonder score staan onderaan.
+- Scores, boxart en de basisgegevens van elke game worden één keer op de achtergrond opgehaald en in je kluis bewaard (in een aparte lijst, zodat dit je eigen wijzigingen nooit overschrijft). Bovenin zie je de voortgang. Nieuwe games en games met een aangepaste titel worden vanzelf opgehaald.
+- Het detailscherm opent daardoor direct met boxart, score en details; alleen de samenvatting wordt nog even geladen.
+- Kies je via "Niet de juiste game?" een andere pagina, dan wordt die keuze nu onthouden, ook op je andere apparaten.
+- Let op: dit is een nieuwe versie van het datamodel. Werk de app op al je apparaten bij; een apparaat met een oudere versie kan pas weer bewerken na het bijwerken.
+
 ## 1.4.1
 
 - Het detailscherm laadt sneller: de gegevens worden waar mogelijk tegelijk opgehaald, en het laden begint al zodra je een game aanraakt.

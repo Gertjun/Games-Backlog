@@ -6,16 +6,20 @@
 //            group (serie/console-groep), platforms: string[], years: number[],
 //            status ('backlog'|'playing'|'done'|'dropped'),
 //            rating (0–5), playedOn, finished ('yyyy-mm-dd'), notes }
+//   gameInfo: { id (= game-id), … } publieke info van Wikipedia/Wikidata
+//            (score, boxart-link, genre…), zie js/enrich.js
 // Schema 2: `years` toegevoegd (jaar/jaren van release). Jaar en platform
 // tussen haakjes in de titel, zoals "(1985, NES)", worden labels.
+// Schema 3: collectie `gameInfo` toegevoegd (Metascore in de lijst).
 
 import { h, today } from './core/dom.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
-import { findCandidates, loadDetails, prefetch } from './gameinfo.js';
+import { findCandidates, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
+import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 2;
+const SCHEMA = 3;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -108,12 +112,13 @@ export const app = {
       rating: 0, playedOn: '', finished: '', notes: '',
       ...withTitleInfo({ title, platforms }),
     }));
-    return { schema: SCHEMA, games };
+    return { schema: SCHEMA, games, gameInfo: [] };
   },
 
   migrate(data) {
     data.games ??= [];
     data.games = purgeTombstones(data.games, TOMBSTONE_DAYS);
+    data.gameInfo = purgeTombstones(data.gameInfo ?? [], TOMBSTONE_DAYS); // schema 3
     // Schema 2: games zonder `years` (van vóór deze versie, of net aangemaakt
     // op een apparaat met een oudere versie) krijgen hun jaar- en platformlabels
     // uit de titel. Dit is voorspelbaar, dus elk apparaat komt op hetzelfde uit;
@@ -133,11 +138,13 @@ export const app = {
       ...local,
       schema: Math.max(local.schema || 0, remote.schema || 0),
       games: mergeCollections(local.games, remote.games),
+      gameInfo: mergeCollections(local.gameInfo, remote.gameInfo),
     };
   },
 
   render(root, ctx) {
     const all = alive(ctx.data.games);
+    infoById = new Map(alive(ctx.data.gameInfo).map((r) => [r.id, r]));
     const listEl = h('div', { class: 'gb-list' });
     const chipsEl = h('div', { class: 'gb-chips', role: 'tablist', 'aria-label': 'Status' });
 
@@ -162,7 +169,7 @@ export const app = {
       select('group', 'Serie', [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])]),
       select('platform', 'Platform', [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])]),
       select('year', 'Jaar van release', [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])]),
-      select('sort', 'Sorteren', [['group', 'Per serie'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
+      select('sort', 'Sorteren', [['group', 'Per serie'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
 
     const addBtn = h('button', {
       class: 'gb-fab', type: 'button', 'aria-label': 'Game toevoegen',
@@ -173,6 +180,7 @@ export const app = {
     refresh();
     watchLock(root);
     detail?.refresh();
+    startEnrich(ctx, SCHEMA);
   },
 };
 
@@ -189,7 +197,20 @@ function renderStats(all) {
       h('span', {}, h('strong', {}, String(done)), ` / ${all.length} uitgespeeld`),
       h('span', {}, h('strong', {}, String(playing)), ' bezig'),
       h('strong', {}, `${pct}%`)),
-    h('div', { class: 'gb-bar' }, bar));
+    h('div', { class: 'gb-bar' }, bar),
+    enrichLine());
+}
+
+/** "Scores ophalen… 42 van 160", zolang dat op de achtergrond loopt. */
+function enrichLine() {
+  const el = h('p', { class: 'gb-enrich', role: 'status' });
+  const show = () => {
+    el.hidden = !progress.active;
+    el.textContent = progress.active ? `Scores en boxart ophalen… ${progress.done} van ${progress.total}` : '';
+  };
+  onProgress(show);
+  show();
+  return el;
 }
 
 function renderChips(el, all, refresh) {
@@ -223,6 +244,11 @@ function sortGames(list) {
     return copy.sort((a, b) => first(a) - first(b) || byTitle(a, b));
   }
   if (view.sort === 'recent') return copy.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  if (view.sort === 'score') {
+    // Hoogste score eerst, games zonder score onderaan
+    const sc = (g) => mainScore(infoById.get(g.id))?.score ?? -1;
+    return copy.sort((a, b) => sc(b) - sc(a) || byTitle(a, b));
+  }
   if (view.sort === 'rating') return copy.sort((a, b) => (b.rating || 0) - (a.rating || 0) || byTitle(a, b));
   // Per serie: modern eerst, binnen een serie de volgorde van de lijst
   return copy.sort((a, b) => (a.section === 'modern' ? 0 : 1) - (b.section === 'modern' ? 0 : 1));
@@ -271,11 +297,30 @@ function gameRow(g, ctx) {
     }, st.icon),
     h('button', {
       class: 'gb-body', type: 'button',
-      onPointerdown: () => prefetch(g),
+      onPointerdown: () => prefetch(g, infoById.get(g.id)),
       onClick: () => openDetail(ctx, g.id),
     },
       h('span', { class: 'gb-title' }, g.title),
-      h('span', { class: 'gb-meta' }, meta)));
+      h('span', { class: 'gb-meta' }, meta)),
+    scoreBadge(infoById.get(g.id)));
+}
+
+/** Metascore, of anders GameRankings (oudere retro-games). */
+function mainScore(info) {
+  if (!info?.found) return null;
+  if (info.metacritic?.[0]) return { score: info.metacritic[0].score, source: 'mc' };
+  if (info.gamerankings?.[0]) return { score: info.gamerankings[0].score, source: 'gr' };
+  return null;
+}
+
+function scoreBadge(info) {
+  const sc = mainScore(info);
+  if (!sc) return null;
+  const label = sc.source === 'mc' ? `Metascore ${sc.score}` : `GameRankings ${sc.score}%`;
+  return h('span', {
+    class: 'gb-score', title: label, 'aria-label': label,
+    dataset: { level: scoreLevel(sc.score), source: sc.source },
+  }, String(sc.score));
 }
 
 async function cycleStatus(ctx, g) {
@@ -337,7 +382,10 @@ function openEditor(ctx, id) {
         type: 'button', class: 'btn btn-danger',
         onClick: async () => {
           if (!ctx.confirm(`"${g.title}" verwijderen?`)) return;
-          await ctx.update((d) => { removeById(d.games, id); });
+          await ctx.update((d) => {
+            removeById(d.games, id);
+            if (findById(d.gameInfo, id)) removeById(d.gameInfo, id);
+          });
           close();
           ctx.toast('Verwijderd');
         },
@@ -393,14 +441,16 @@ function openEditor(ctx, id) {
 // niet in de kluis opgeslagen.
 
 let detail = null; // het open detailscherm, wordt bijgewerkt na een wijziging
-const chosenPage = new Map(); // game-id → gekozen Wikipedia-pagina (alleen deze sessie)
+let infoById = new Map(); // game-id → bewaarde info (gameInfo), per render bijgewerkt
 let lockObserver = null;
 
 /** Sluit app-dialogen zodra de schil vergrendelt (dan wordt de app-inhoud leeggemaakt). */
 function watchLock(root) {
   if (lockObserver) return;
   lockObserver = new MutationObserver(() => {
-    if (!root.childElementCount) document.querySelectorAll('dialog.gb-modal').forEach((d) => d.close());
+    if (root.childElementCount) return;
+    document.querySelectorAll('dialog.gb-modal').forEach((d) => d.close());
+    stopEnrich();
   });
   lockObserver.observe(root, { childList: true });
 }
@@ -431,7 +481,11 @@ function openDetail(ctx, id) {
   detail?.close();
 
   const ctrl = new AbortController();
-  const s = { loading: true, error: '', candidates: [], current: null, info: null, picker: false, expanded: false };
+  // core: boxart/scores/feiten (eerst uit de kluis, daarna vers), summary: samenvatting
+  const s = {
+    loading: true, error: '', core: null, summary: null, candidates: [],
+    picker: false, pickerLoading: false, expanded: false,
+  };
   let run = 0;
 
   const heroEl = h('section', { class: 'gb-d-hero' });
@@ -451,37 +505,70 @@ function openDetail(ctx, id) {
         icon(ICON.edit), h('span', {}, 'Bewerken'))),
     h('div', { class: 'gb-d-scroll' }, heroEl, bodyEl));
 
+  const stored = () => findById(ctx.data.gameInfo, id);
+
   const draw = () => {
     const g = findById(ctx.data.games, id);
     if (!g) { dlg.close(); return; }
     heroEl.classList.remove('no-image');
     heroEl.replaceChildren(...detailHero(g, s, img).filter(Boolean));
-    bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw }).filter(Boolean));
+    bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw, openPicker }).filter(Boolean));
   };
 
+  /** Laadt de game; met `pick` een zelf gekozen Wikipedia-pagina. */
   async function load(pick) {
     const mine = ++run;
+    const g = findById(ctx.data.games, id);
+    const info = stored();
+    let cand = pick || (info?.found && info.query === g.title || info?.pinned ? candidateFrom(info) : null);
+    if (!pick && info?.found) s.core = info; // meteen tonen wat al bewaard is
+    if (pick) { s.core = null; s.summary = null; }
     s.loading = true;
     s.error = '';
     s.picker = false;
     draw();
     try {
-      const g = findById(ctx.data.games, id);
-      if (!s.candidates.length) s.candidates = await findCandidates(g, ctrl.signal);
-      const want = pick ?? chosenPage.get(id);
-      s.current = s.candidates.find((c) => c.pageid === want) || s.candidates[0] || null;
-      s.info = null;
-      if (mine !== run) return;
-      draw();
-      s.info = s.current ? await loadDetails(s.current, ctrl.signal) : null;
+      if (!cand) {
+        if (!s.candidates.length) s.candidates = await findCandidates(g, ctrl.signal);
+        cand = bestCandidate(s.candidates);
+        if (!cand) {
+          if (mine !== run) return;
+          s.core = null;
+          if (!info || info.found || info.query !== g.title) await ctx.update((d) => putInfo(d, id, notFound(g.title)));
+        }
+      }
+      if (cand) {
+        const core = await loadCore(cand, ctrl.signal);
+        if (mine !== run) return;
+        s.core = core;
+        draw();
+        const pinned = Boolean(pick) || Boolean(info?.pinned && !pick && info.pageid === core.pageid);
+        const fresh = toStored(core, g.title, pinned);
+        if (infoChanged(stored(), fresh)) await ctx.update((d) => putInfo(d, id, fresh));
+        s.summary = await loadSummary(core, ctrl.signal).catch(() => null);
+      }
     } catch {
       if (ctrl.signal.aborted || mine !== run) return;
-      s.error = navigator.onLine
-        ? 'De informatie kon niet worden opgehaald. Probeer het later nog eens.'
-        : 'Je bent offline. De informatie over de game wordt geladen zodra je weer verbinding hebt.';
+      if (!s.core) {
+        s.error = navigator.onLine
+          ? 'De informatie kon niet worden opgehaald. Probeer het later nog eens.'
+          : 'Je bent offline. De informatie over de game wordt geladen zodra je weer verbinding hebt.';
+      }
     }
     if (mine !== run) return;
     s.loading = false;
+    draw();
+  }
+
+  /** "Niet de juiste game?": andere zoekresultaten tonen. */
+  async function openPicker() {
+    s.picker = !s.picker;
+    if (s.picker && !s.candidates.length) {
+      s.pickerLoading = true;
+      draw();
+      s.candidates = await findCandidates(findById(ctx.data.games, id), ctrl.signal).catch(() => []);
+      s.pickerLoading = false;
+    }
     draw();
   }
 
@@ -491,10 +578,8 @@ function openDetail(ctx, id) {
     if (detail?.dlg === dlg) detail = null;
   });
   detail = { dlg, refresh: draw, close: () => dlg.close() };
-  draw();
   document.body.append(dlg);
   dlg.showModal();
-  dlg.querySelector('.gb-d-scroll').scrollTop = 0;
   load();
 }
 
@@ -508,7 +593,7 @@ function coverImage(src, alt, cls) {
 }
 
 function detailHero(g, s, img) {
-  const image = s.info?.image || s.current?.thumb || '';
+  const image = s.core?.image || '';
   const first = (g.platforms || [])[0];
   const placeholder = h('div', { class: 'gb-d-cover gb-d-cover-empty', dataset: first ? { platform: platformKey(first) } : {} },
     first ? platformIcon(first) : null,
@@ -520,8 +605,8 @@ function detailHero(g, s, img) {
   else cover = placeholder;
 
   const st = STATUS[g.status] || STATUS.backlog;
-  const f = s.info?.facts || {};
-  const year = s.info?.release?.year || (g.years?.length ? Math.min(...g.years) : null);
+  const f = s.core?.facts || {};
+  const year = s.core?.release?.year || (g.years?.length ? Math.min(...g.years) : null);
   const subtitle = [f.developer?.[0], year].filter(Boolean).join(' · ');
 
   return [
@@ -540,11 +625,12 @@ function detailHero(g, s, img) {
 
 function scoreCard(s) {
   const head = h('h2', { class: 'gb-d-label' }, 'Metascore');
-  if (s.loading && !s.info) {
+  const core = s.core;
+  if (s.loading && !core) {
     return h('section', { class: 'card gb-d-tile' }, head, h('div', { class: 'gb-d-score gb-skel' }), h('p', { class: 'gb-skel gb-skel-line' }));
   }
-  const mc = s.info?.metacritic || [];
-  const gr = s.info?.gamerankings || [];
+  const mc = core?.metacritic || [];
+  const gr = core?.gamerankings || [];
   const main = mc[0] || gr[0];
   if (!main) {
     return h('section', { class: 'card gb-d-tile' }, head,
@@ -556,8 +642,7 @@ function scoreCard(s) {
   return h('section', { class: 'card gb-d-tile' },
     h('h2', { class: 'gb-d-label' }, isMc ? 'Metascore' : 'GameRankings'),
     h('div', { class: 'gb-d-score', dataset: { level: scoreLevel(main.score) }, 'aria-label': `${main.score} van de 100` }, String(main.score)),
-    h('p', { class: 'gb-d-note' },
-      main.platform ? `${main.platform}` : (isMc ? 'Gemiddelde van recensies' : 'Gemiddelde (retro)')),
+    h('p', { class: 'gb-d-note' }, main.platform || (isMc ? 'Gemiddelde van recensies' : 'Gemiddelde (retro)')),
     list.length > 1 ? h('ul', { class: 'gb-d-subscores' }, list.slice(1, 5).map((r) => h('li', {},
       h('span', {}, r.platform || 'Overig'),
       h('strong', { dataset: { level: scoreLevel(r.score) } }, String(r.score))))) : null);
@@ -584,54 +669,60 @@ function progressCard(g, ctx) {
     g.status === 'done' && g.finished ? h('p', { class: 'gb-d-note' }, `Uitgespeeld ${formatDate(g.finished)}`) : null);
 }
 
-function detailBody(g, s, { ctx, load, redraw }) {
+function detailBody(g, s, { ctx, load, redraw, openPicker }) {
   const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s), progressCard(g, ctx))];
-  const info = s.info;
+  const core = s.core;
+  const skeleton = (label) => h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': label },
+    h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line' }),
+    h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line gb-skel-short' }));
 
   if (s.error) {
     parts.push(h('section', { class: 'card gb-d-section gb-d-message' },
       h('p', {}, s.error),
-      h('button', { type: 'button', class: 'btn', onClick: () => load(s.current?.pageid) }, icon(ICON.retry), 'Opnieuw proberen')));
-  } else if (s.loading && !info) {
-    parts.push(h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': 'Informatie laden' },
-      h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line' }),
-      h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line gb-skel-short' })));
-  } else if (!info) {
+      h('button', { type: 'button', class: 'btn', onClick: () => load() }, icon(ICON.retry), 'Opnieuw proberen')));
+  } else if (!core && !s.loading) {
     parts.push(h('section', { class: 'card gb-d-section gb-d-message' },
       h('p', {}, 'Er is geen informatie over deze game gevonden op Wikipedia.'),
-      h('p', { class: 'muted' }, 'Tip: controleer de spelling van de titel via Bewerken.')));
+      h('p', { class: 'muted' }, 'Tip: controleer de spelling van de titel via Bewerken, of kies hieronder zelf een pagina.')));
   }
 
-  if (info?.summary) {
-    const paras = info.summary.split(/\n+/).map((t) => t.trim()).filter(Boolean);
-    const long = info.summary.length > 420;
+  // Samenvatting
+  if (s.summary?.text) {
+    const paras = s.summary.text.split(/\n+/).map((t) => t.trim()).filter(Boolean);
+    const long = s.summary.text.length > 420;
     parts.push(h('section', { class: 'card gb-d-section' },
       h('h2', { class: 'gb-d-h2' }, 'Over de game'),
-      h('div', { class: `gb-d-summary${long && !s.expanded ? ' is-clamped' : ''}`, lang: info.summaryLang },
+      h('div', { class: `gb-d-summary${long && !s.expanded ? ' is-clamped' : ''}`, lang: s.summary.lang },
         paras.map((t) => h('p', {}, t))),
       long ? h('button', {
         type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.expanded),
         onClick: () => { s.expanded = !s.expanded; redraw(); },
       }, s.expanded ? 'Minder tonen' : 'Lees meer') : null,
-      info.summaryLang === 'en' ? h('p', { class: 'gb-d-note' }, 'Samenvatting in het Engels; er is geen Nederlands artikel.') : null));
+      s.summary.lang === 'en' ? h('p', { class: 'gb-d-note' }, 'Samenvatting in het Engels; er is geen Nederlands artikel.') : null));
+  } else if (s.loading && !s.error) {
+    parts.push(skeleton('Samenvatting laden'));
   }
 
-  if (info) {
-    const f = info.facts;
+  // Details
+  if (core) {
+    const f = core.facts || {};
     const rows = [
       ['Ontwikkelaar', f.developer], ['Uitgever', f.publisher],
-      ['Eerste release', info.release ? [info.release.text] : []],
+      ['Eerste release', core.release ? [core.release.text] : []],
       ['Spelmodi', f.modes], ['Serie', f.series], ['Regie', f.director], ['Muziek', f.composer],
     ].filter(([, v]) => v?.length);
-    if (f.genre.length || rows.length) {
+    if (f.genre?.length || rows.length) {
       parts.push(h('section', { class: 'card gb-d-section' },
         h('h2', { class: 'gb-d-h2' }, 'Details'),
-        f.genre.length ? h('div', { class: 'gb-d-genres', 'aria-label': 'Genre' }, f.genre.map((x) => h('span', { class: 'gb-d-genre' }, x))) : null,
+        f.genre?.length ? h('div', { class: 'gb-d-genres', 'aria-label': 'Genre' }, f.genre.map((x) => h('span', { class: 'gb-d-genre' }, x))) : null,
         rows.length ? h('dl', { class: 'gb-d-facts' }, rows.map(([k, v]) => h('div', {},
-          h('dt', {}, k), h('dd', {}, v.slice(0, 4).join(', '))))) : null));
+          h('dt', {}, k), h('dd', {}, v.join(', '))))) : null));
     }
+  } else if (s.loading && !s.error) {
+    parts.push(skeleton('Details laden'));
   }
 
+  // Eigen gegevens
   const mine = [
     ['Gespeeld op', g.playedOn], ['Uitgespeeld op', g.finished ? formatDate(g.finished) : ''],
   ].filter(([, v]) => v);
@@ -643,25 +734,24 @@ function detailBody(g, s, { ctx, load, redraw }) {
   }
 
   // Bron, links en een andere pagina kiezen als de match niet klopt
-  const others = s.candidates.filter((c) => c.pageid !== s.current?.pageid);
+  const others = s.candidates.filter((c) => c.pageid !== core?.pageid);
   const ext = (href, text) => h('a', { class: 'gb-d-link', href, target: '_blank', rel: 'noopener noreferrer' }, text, icon(ICON.external));
   parts.push(h('footer', { class: 'gb-d-foot' },
     h('div', { class: 'gb-d-links' },
-      info ? ext(info.wikiUrl, 'Wikipedia') : null,
+      core ? ext(s.summary?.url || coreWikiUrl(core), 'Wikipedia') : null,
       ext(`https://www.metacritic.com/search/${encodeURIComponent(g.title)}/`, 'Metacritic')),
-    info && s.current && norm(s.current.title) !== norm(g.title)
-      ? h('p', { class: 'gb-d-note' }, `Gevonden als "${s.current.title}"`) : null,
-    others.length && !s.loading ? h('button', {
-      type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.picker),
-      onClick: () => { s.picker = !s.picker; redraw(); },
-    }, 'Niet de juiste game?') : null,
-    s.picker ? h('ul', { class: 'card gb-d-picker' }, others.map((c) => h('li', {},
+    core && norm(core.title) !== norm(g.title) ? h('p', { class: 'gb-d-note' }, `Gevonden als "${core.title}"`) : null,
+    s.loading && !core ? null : h('button', {
+      type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.picker), onClick: openPicker,
+    }, core ? 'Niet de juiste game?' : 'Zelf een pagina kiezen'),
+    s.picker && s.pickerLoading ? h('p', { class: 'gb-d-note' }, 'Zoeken…') : null,
+    s.picker && !s.pickerLoading ? (others.length ? h('ul', { class: 'card gb-d-picker' }, others.map((c) => h('li', {},
       h('button', {
         type: 'button',
-        onClick: () => { chosenPage.set(g.id, c.pageid); s.expanded = false; load(c.pageid); },
+        onClick: () => { s.expanded = false; load(c); },
       },
       c.thumb ? h('img', { src: c.thumb, alt: '', class: 'gb-d-pthumb', referrerpolicy: 'no-referrer' }) : h('span', { class: 'gb-d-pthumb' }),
-      h('span', { class: 'gb-d-ptext' }, h('strong', {}, c.title), c.description ? h('span', {}, c.description) : null))))) : null,
+      h('span', { class: 'gb-d-ptext' }, h('strong', {}, c.title), c.description ? h('span', {}, c.description) : null))))) : h('p', { class: 'gb-d-note' }, 'Geen andere resultaten gevonden.')) : null,
     h('p', { class: 'gb-d-source' }, 'Informatie en boxart: Wikipedia en Wikidata.')));
 
   return parts;
