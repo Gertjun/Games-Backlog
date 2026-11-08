@@ -2,21 +2,21 @@
 //  App-configuratie — PAS DIT AAN PER APP
 // =============================================================
 export const APP = {
-  name: 'Mijn App',
+  name: 'Games Backlog',
 
   // Semver. Bij ELKE release ook VERSION in sw.js gelijk ophogen,
   // anders krijgen geïnstalleerde apps de update niet.
-  version: '1.2.0',
+  version: '1.0.0',
 
   // UNIEK PER APP. Alle GitHub Pages-sites onder <gebruiker>.github.io
   // delen dezelfde origin en dus dezelfde localStorage. Zonder unieke
   // prefix overschrijven apps elkaars gegevens. Nooit meer wijzigen
   // nadat de app in gebruik is (anders is de lokale kluis "weg").
-  storagePrefix: 'mijn-app',
+  storagePrefix: 'games-backlog',
 
   // Standaardlocatie van het versleutelde kluisbestand in je PRIVATE data-repo.
   // Tip: één data-repo voor al je apps, met per app een eigen map.
-  defaultDataPath: 'mijn-app/vault.json',
+  defaultDataPath: 'games-backlog/vault.json',
   defaultBranch: 'main',
 
   // Automatisch vergrendelen na zoveel minuten inactiviteit of op de achtergrond. 0 = uit.
