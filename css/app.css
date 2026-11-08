@@ -98,7 +98,11 @@ body { background-color: var(--bg); }
 
 .gb-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gb-filters select { min-width: 0; }
-@media (min-width: 640px) { .gb-filters { grid-template-columns: repeat(4, 1fr); } }
+.gb-filters select:last-child { grid-column: 1 / -1; }
+@media (min-width: 640px) {
+  .gb-filters { grid-template-columns: repeat(5, 1fr); }
+  .gb-filters select:last-child { grid-column: auto; }
+}
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }
 .gb-group-head {
@@ -141,6 +145,7 @@ body { background-color: var(--bg); }
   font-size: 0.75rem; padding: 1px 7px; border-radius: 6px;
   background: var(--surface-2); color: var(--muted);
 }
+.gb-tag-year { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .gb-tag-playing { color: var(--warn); }
 .gb-tag-dropped { color: var(--danger); }
 .gb-stars { font-size: 0.8rem; color: var(--warn); letter-spacing: 1px; }

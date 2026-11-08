@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Nieuw: labels voor het jaar van release, naast de platformlabels. Filter op jaar en sorteer op "Jaar van release".
+- Jaar en platform tussen haakjes in de titel, zoals "(1985, NES)", zijn eenmalig uit de titels gehaald en omgezet naar labels. Namen als "Super Famicom", "PlayStation" en "Nintendo DS" worden daarbij SNES, PS1 en NDS.
+- Typ je bij een nieuwe of bewerkte game toch "(1991, SNES)" in de titel, dan wordt dat automatisch een jaar- en platformlabel.
+- Bij het bewerken van een game staat een nieuw veld "Jaar van release". Een game kan meerdere jaren hebben (bijvoorbeeld origineel en remake).
+
 ## 1.1.0
 
 - Nieuw app-icoon (de controller op blauw-violet), ook op het beginscherm van iPhone en iPad.

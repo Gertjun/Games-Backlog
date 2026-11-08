@@ -6,7 +6,7 @@ export const APP = {
 
   // Semver. Bij ELKE release ook VERSION in sw.js gelijk ophogen,
   // anders krijgen geïnstalleerde apps de update niet.
-  version: '1.1.0',
+  version: '1.2.0',
 
   // UNIEK PER APP. Alle GitHub Pages-sites onder <gebruiker>.github.io
   // delen dezelfde origin en dus dezelfde localStorage. Zonder unieke
