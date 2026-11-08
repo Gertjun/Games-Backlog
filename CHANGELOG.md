@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- Platformlabels hebben nu elk een eigen kleur, gebaseerd op de kleur die bij de console hoort: bijvoorbeeld rood voor NES en Switch, paars voor SNES, groen voor Game Boy en blauw voor PlayStation.
+- Elk platformlabel heeft een icoontje met de vorm van het apparaat: een controller voor thuisconsoles, een disc voor PlayStation, een rechtopstaande handheld voor Game Boy, een liggende voor GBA, PSP en Switch, twee schermen voor DS en 3DS en een monitor voor pc.
+- Zelf toegevoegde platforms krijgen automatisch de accentkleur en een controller-icoontje.
+
 ## 1.2.0
 
 - Nieuw: labels voor het jaar van release, naast de platformlabels. Filter op jaar en sorteer op "Jaar van release".

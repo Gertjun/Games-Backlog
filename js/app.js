@@ -12,6 +12,7 @@
 import { h, today } from './core/dom.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
+import { platformIcon, platformKey } from './platforms.js';
 
 const SCHEMA = 2;
 const TOMBSTONE_DAYS = 180;
@@ -253,7 +254,7 @@ function gameRow(g, ctx) {
   const st = STATUS[g.status] || STATUS.backlog;
   const meta = [
     g.status === 'playing' || g.status === 'dropped' ? h('span', { class: `gb-tag gb-tag-${g.status}` }, st.label) : null,
-    ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag' }, p)),
+    ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
     ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year', 'aria-label': `Uit ${y}` }, String(y))),
     g.rating ? h('span', { class: 'gb-stars', 'aria-label': `${g.rating} sterren` }, '★'.repeat(g.rating)) : null,
     g.status === 'done' && g.finished ? h('span', { class: 'gb-date' }, formatDate(g.finished)) : null,

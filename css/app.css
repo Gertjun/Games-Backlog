@@ -145,6 +145,57 @@ body { background-color: var(--bg); }
   font-size: 0.75rem; padding: 1px 7px; border-radius: 6px;
   background: var(--surface-2); color: var(--muted);
 }
+/* Platformlabels: eigen kleur per platform, gebaseerd op de console.
+   Onbekende platforms krijgen de accentkleur. */
+.gb-ptag {
+  --pc: var(--accent);
+  display: inline-flex; align-items: center; gap: 4px;
+  background: color-mix(in srgb, var(--pc) 16%, var(--surface));
+  color: color-mix(in srgb, var(--pc) 72%, var(--text));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc) 35%, transparent);
+  font-weight: 500;
+}
+.gb-picon {
+  width: 14px; height: 14px; flex: none;
+  fill: none; stroke: var(--pci, var(--pc)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.gb-picon .dot { fill: var(--pci, var(--pc)); stroke: none; }
+/* Nintendo */
+[data-platform="nes"]     { --pc: #d9252a; } /* rode logo- en cartridgekleur */
+[data-platform="snes"]    { --pc: #5b4cb8; } /* paarse knoppen (VS-model) */
+[data-platform="gb"]      { --pc: #7a8f1c; } /* groen scherm van de originele Game Boy */
+[data-platform="gbc"]     { --pc: #8e3fbf; } /* "Grape"-paars */
+[data-platform="gba"]     { --pc: #4b45a8; } /* indigo */
+[data-platform="n64"]     { --pc: #0f9d58; } /* groen uit het N64-logo */
+[data-platform="gc"]      { --pc: #6a4fc3; } /* GameCube-indigo */
+[data-platform="wii"]     { --pc: #2aa7dc; } /* Wii-lichtblauw */
+[data-platform="wii-u"]   { --pc: #0085b8; } /* Wii U-blauw */
+[data-platform="nds"]     { --pc: #6b7280; } /* zilvergrijs */
+[data-platform="3ds"]     { --pc: #c8102e; } /* 3DS-rood */
+[data-platform="switch"]  { --pc: #e70009; } /* Switch-rood */
+/* PlayStation: grijs voor de PS1, daarna steeds het blauw van het merk */
+[data-platform="ps1"]     { --pc: #6b707a; }
+[data-platform="ps2"]     { --pc: #2449a8; }
+[data-platform="ps3"]     { --pc: #4a4f5c; }
+[data-platform="ps4"]     { --pc: #00439c; }
+[data-platform="ps5"]     { --pc: #0070d1; }
+[data-platform="psp"]     { --pc: #3d4250; }
+[data-platform="ps-vita"] { --pc: #1f6fb2; }
+/* Overig */
+[data-platform="pce"]     { --pc: #e8780c; } /* PC Engine-oranje */
+[data-platform="genesis"] { --pc: #b3202e; } /* rood uit het Genesis-logo */
+[data-platform="xbox"]    { --pc: #107c10; } /* Xbox-groen */
+[data-platform="pc"]      { --pc: #475569; }
+@media (prefers-color-scheme: dark) {
+    .gb-ptag {
+    color: color-mix(in srgb, var(--pc) 55%, var(--text));
+    --pci: color-mix(in srgb, var(--pc) 70%, #fff);
+  }
+    [data-platform="ps1"],
+    [data-platform="ps3"],
+    [data-platform="psp"],
+    [data-platform="pc"] { --pc: #a3a9b6; }
+}
 .gb-tag-year { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .gb-tag-playing { color: var(--warn); }
 .gb-tag-dropped { color: var(--danger); }
