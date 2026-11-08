@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+- Het detailscherm laadt sneller: de gegevens worden waar mogelijk tegelijk opgehaald, en het laden begint al zodra je een game aanraakt.
+- Opgelost: de boxart werd soms maar half getoond. Hij verschijnt nu pas als hij helemaal geladen is, met tot die tijd een laad-animatie.
+
 ## 1.4.0
 
 - Nieuw: tik op een game voor een detailscherm met de boxart, de Metascore (of de GameRankings-score bij oudere retro-games), genre, ontwikkelaar, uitgever, eerste releasedatum, spelmodi, serie, regie en muziek, plus een korte samenvatting (in het Nederlands als er een Nederlands Wikipedia-artikel is).

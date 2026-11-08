@@ -13,7 +13,7 @@ import { h, today } from './core/dom.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
-import { findCandidates, loadDetails } from './gameinfo.js';
+import { findCandidates, loadDetails, prefetch } from './gameinfo.js';
 
 const SCHEMA = 2;
 const TOMBSTONE_DAYS = 180;
@@ -269,7 +269,11 @@ function gameRow(g, ctx) {
       'aria-label': `${g.title}: ${st.label}. Tik voor ${STATUS[NEXT[g.status] || 'playing'].label}`,
       onClick: () => cycleStatus(ctx, g),
     }, st.icon),
-    h('button', { class: 'gb-body', type: 'button', onClick: () => openDetail(ctx, g.id) },
+    h('button', {
+      class: 'gb-body', type: 'button',
+      onPointerdown: () => prefetch(g),
+      onClick: () => openDetail(ctx, g.id),
+    },
       h('span', { class: 'gb-title' }, g.title),
       h('span', { class: 'gb-meta' }, meta)));
 }
@@ -431,6 +435,14 @@ function openDetail(ctx, id) {
   let run = 0;
 
   const heroEl = h('section', { class: 'gb-d-hero' });
+  // Afbeeldingen één keer maken en bij elke update hergebruiken: een nieuw
+  // <img> midden in het laden gaf op iPhone soms een half getoonde boxart.
+  const imgs = new Map();
+  const img = (src, alt, cls) => {
+    const key = `${cls}|${src}`;
+    if (!imgs.has(key)) imgs.set(key, coverImage(src, alt, cls));
+    return imgs.get(key);
+  };
   const bodyEl = h('div', { class: 'gb-d-content' });
   const dlg = h('dialog', { class: 'gb-detail gb-modal', 'aria-labelledby': 'gb-d-title' },
     h('div', { class: 'gb-d-bar' },
@@ -443,7 +455,7 @@ function openDetail(ctx, id) {
     const g = findById(ctx.data.games, id);
     if (!g) { dlg.close(); return; }
     heroEl.classList.remove('no-image');
-    heroEl.replaceChildren(...detailHero(g, s).filter(Boolean));
+    heroEl.replaceChildren(...detailHero(g, s, img).filter(Boolean));
     bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw }).filter(Boolean));
   };
 
@@ -488,11 +500,14 @@ function openDetail(ctx, id) {
 
 function coverImage(src, alt, cls) {
   const img = h('img', { src, alt, class: cls, decoding: 'async', referrerpolicy: 'no-referrer' });
+  // Pas tonen als de afbeelding helemaal binnen is (tot dan een laad-animatie)
+  const shown = () => img.classList.add('is-loaded');
+  img.addEventListener('load', () => (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(shown));
   img.addEventListener('error', () => img.closest('.gb-d-hero')?.classList.add('no-image'));
   return img;
 }
 
-function detailHero(g, s) {
+function detailHero(g, s, img) {
   const image = s.info?.image || s.current?.thumb || '';
   const first = (g.platforms || [])[0];
   const placeholder = h('div', { class: 'gb-d-cover gb-d-cover-empty', dataset: first ? { platform: platformKey(first) } : {} },
@@ -500,7 +515,7 @@ function detailHero(g, s) {
     h('span', {}, (g.title.match(/[A-Za-z0-9]/)?.[0] || '?').toUpperCase()));
 
   let cover;
-  if (image) cover = h('div', { class: 'gb-d-coverwrap' }, coverImage(image, `Boxart van ${g.title}`, 'gb-d-cover'), placeholder);
+  if (image) cover = h('div', { class: 'gb-d-coverwrap' }, img(image, `Boxart van ${g.title}`, 'gb-d-cover'), placeholder);
   else if (s.loading) cover = h('div', { class: 'gb-d-cover gb-skel', 'aria-label': 'Boxart laden' });
   else cover = placeholder;
 
@@ -510,7 +525,7 @@ function detailHero(g, s) {
   const subtitle = [f.developer?.[0], year].filter(Boolean).join(' · ');
 
   return [
-    image ? h('div', { class: 'gb-d-backdrop', 'aria-hidden': 'true' }, coverImage(image, '', '')) : null,
+    image ? h('div', { class: 'gb-d-backdrop', 'aria-hidden': 'true' }, img(image, '', 'gb-d-bdimg')) : null,
     h('div', { class: 'gb-d-hero-inner' },
       cover,
       h('div', { class: 'gb-d-head' },

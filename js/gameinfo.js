@@ -96,8 +96,8 @@ export function findCandidates(game, signal) {
     try {
       const json = await api(WIKI('en'), {
         action: 'query', generator: 'search', gsrsearch: query, gsrlimit: '10', gsrnamespace: '0',
-        prop: 'pageimages|pageprops|description', piprop: 'thumbnail', pithumbsize: '640',
-        pilicense: 'any', ppprop: 'wikibase_item', redirects: '1',
+        prop: 'pageimages|pageprops|description|langlinks', piprop: 'thumbnail', pithumbsize: '500',
+        pilicense: 'any', ppprop: 'wikibase_item', lllang: 'nl', lllimit: 'max', redirects: '1',
       }, t.signal);
       const pages = (json.query?.pages || []).filter((p) => !p.missing);
       return pages
@@ -106,6 +106,7 @@ export function findCandidates(game, signal) {
           title: p.title,
           description: p.description || '',
           qid: p.pageprops?.wikibase_item || '',
+          nlTitle: p.langlinks?.find((l) => l.lang === 'nl')?.title || '',
           thumb: safeImage(p.thumbnail?.source),
           index: p.index,
           score: score(p, game),
@@ -220,15 +221,18 @@ export function loadDetails(candidate, signal) {
   return cached(detailCache, candidate.pageid, async () => {
     const t = withTimeout(signal);
     try {
-      let entity = null;
-      if (candidate.qid) {
-        const json = await api(WIKIDATA, {
+      // Alles wat niet van elkaar afhangt tegelijk ophalen
+      const entityP = candidate.qid
+        ? api(WIKIDATA, {
           action: 'wbgetentities', ids: candidate.qid, props: 'claims|sitelinks', sitefilter: 'nlwiki|enwiki',
-        }, t.signal).catch(() => null);
-        entity = json?.entities?.[candidate.qid] || null;
-      }
+        }, t.signal).then((j) => j?.entities?.[candidate.qid] || null).catch(() => null)
+        : Promise.resolve(null);
+      const nlP = candidate.nlTitle ? summary('nl', candidate.nlTitle, t.signal).catch(() => '') : null;
+      const enP = summary('en', candidate.title, t.signal).catch(() => '');
+
+      const entity = await entityP;
       const claims = entity?.claims || {};
-      const nlTitle = entity?.sitelinks?.nlwiki?.title;
+      const nlTitle = candidate.nlTitle || entity?.sitelinks?.nlwiki?.title || '';
 
       const factProps = ['genre', 'developer', 'publisher', 'modes', 'series', 'director', 'composer'];
       const reviews = reviewClaims(claims);
@@ -236,11 +240,14 @@ export function loadDetails(candidate, signal) {
         ...factProps.flatMap((k) => ids(claims, P[k])),
         ...reviews.flatMap((r) => [r.by, r.platform]).filter(Boolean),
       ];
+      // Geen Metacritic op Wikidata? Dan meteen ook de recensietabel van Wikipedia.
+      const needWikitext = !reviews.some((r) => r.by === 'Q150248');
 
-      const [names, nlText, enText] = await Promise.all([
+      const [names, nlText, enText, wt] = await Promise.all([
         wanted.length ? labels(wanted, t.signal).catch(() => new Map()) : new Map(),
-        nlTitle ? summary('nl', nlTitle, t.signal).catch(() => '') : '',
-        summary('en', candidate.title, t.signal).catch(() => ''),
+        nlP || (nlTitle ? summary('nl', nlTitle, t.signal).catch(() => '') : ''),
+        enP,
+        needWikitext ? scoresFromWikitext(candidate.title, t.signal).catch(() => null) : null,
       ]);
 
       const facts = {};
@@ -258,7 +265,6 @@ export function loadDetails(candidate, signal) {
       let metacritic = byOutlet(/metacritic/i);
       let gamerankings = byOutlet(/gamerankings/i);
       if (!metacritic.length) {
-        const wt = await scoresFromWikitext(candidate.title, t.signal).catch(() => null);
         if (wt?.metacritic != null) metacritic = [{ score: wt.metacritic, platform: '' }];
         if (!gamerankings.length && wt?.gamerankings != null) gamerankings = [{ score: wt.gamerankings, platform: '' }];
       }
@@ -282,4 +288,19 @@ export function loadDetails(candidate, signal) {
       t.done();
     }
   });
+}
+
+/**
+ * Alvast beginnen met laden zodra je een game aanraakt, zodat het
+ * detailscherm (vrijwel) klaar is als het opent.
+ */
+export function prefetch(game) {
+  findCandidates(game)
+    .then((list) => {
+      const best = list[0];
+      if (!best) return;
+      if (best.thumb) new Image().src = best.thumb;
+      loadDetails(best).catch(() => {});
+    })
+    .catch(() => {});
 }

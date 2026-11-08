@@ -416,3 +416,14 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 .gb-skel-line { height: 0.9em; border-radius: 6px; margin: 0; width: 100%; }
 .gb-skel-short { width: 60%; }
 @keyframes gb-shimmer { to { background-position: -200% 0; } }
+
+/* Boxart pas tonen als hij helemaal geladen is; tot dan een laad-animatie */
+.gb-d-coverwrap img.gb-d-cover { transition: opacity 0.25s ease; }
+.gb-d-coverwrap img.gb-d-cover:not(.is-loaded) { width: 160px; height: 210px; opacity: 0; }
+.gb-d-coverwrap:has(img.gb-d-cover:not(.is-loaded)) {
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--surface-2) 0%, color-mix(in srgb, var(--surface-2) 55%, var(--surface)) 50%, var(--surface-2) 100%);
+  background-size: 200% 100%; animation: gb-shimmer 1.3s linear infinite;
+}
+.gb-d-backdrop img { transition: opacity 0.4s ease; }
+.gb-d-backdrop img:not(.is-loaded) { opacity: 0; }
