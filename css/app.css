@@ -1,0 +1,27 @@
+/* =============================================================
+   App-specifieke stijl — PAS DIT AAN PER APP
+   ============================================================= */
+
+/* Accentkleur. Wordt ingesteld door de workflow "Nieuwe app instellen"
+   (tools/setup.mjs); handmatig wijzigen mag ook (dan ook theme_color in
+   manifest.webmanifest aanpassen). */
+/* @accent-start */
+:root {
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --accent: #5b8cff; --accent-contrast: #0b0d12; }
+}
+/* @accent-end */
+
+/* Demo: invoerregel bovenaan */
+.add-form {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
+.add-form input { border-color: transparent; background: transparent; }
+.add-form input:focus-visible { box-shadow: none; border-color: transparent; }
+
+.list-item.is-done .check span { color: var(--muted); text-decoration: line-through; }
