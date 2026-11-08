@@ -13,6 +13,7 @@ import { h, today } from './core/dom.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
+import { findCandidates, loadDetails } from './gameinfo.js';
 
 const SCHEMA = 2;
 const TOMBSTONE_DAYS = 180;
@@ -170,6 +171,8 @@ export const app = {
 
     root.replaceChildren(renderStats(all), search, chipsEl, filters, listEl, addBtn);
     refresh();
+    watchLock(root);
+    detail?.refresh();
   },
 };
 
@@ -266,7 +269,7 @@ function gameRow(g, ctx) {
       'aria-label': `${g.title}: ${st.label}. Tik voor ${STATUS[NEXT[g.status] || 'playing'].label}`,
       onClick: () => cycleStatus(ctx, g),
     }, st.icon),
-    h('button', { class: 'gb-body', type: 'button', onClick: () => openEditor(ctx, g.id) },
+    h('button', { class: 'gb-body', type: 'button', onClick: () => openDetail(ctx, g.id) },
       h('span', { class: 'gb-title' }, g.title),
       h('span', { class: 'gb-meta' }, meta)));
 }
@@ -367,7 +370,7 @@ function openEditor(ctx, id) {
     ctx.toast(id ? 'Opgeslagen' : `${data.title} toegevoegd`, 'ok');
   });
 
-  const dlg = h('dialog', { class: 'sheet', 'aria-labelledby': 'gb-edit-title' },
+  const dlg = h('dialog', { class: 'sheet gb-modal', 'aria-labelledby': 'gb-edit-title' },
     h('div', { class: 'sheet-header' },
       h('h2', { id: 'gb-edit-title' }, id ? 'Game bewerken' : 'Game toevoegen'),
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Sluiten', onClick: () => close() }, '✕')),
@@ -378,3 +381,275 @@ function openEditor(ctx, id) {
   dlg.showModal();
   if (!id) form.elements.title.focus();
 }
+
+/* ---------- Detailscherm ---------- */
+// Tik op een game: een volledig scherm met boxart, Metacritic-score,
+// genre, ontwikkelaar, samenvatting en je eigen voortgang. De publieke
+// informatie komt van Wikipedia/Wikidata (js/gameinfo.js) en wordt
+// niet in de kluis opgeslagen.
+
+let detail = null; // het open detailscherm, wordt bijgewerkt na een wijziging
+const chosenPage = new Map(); // game-id → gekozen Wikipedia-pagina (alleen deze sessie)
+let lockObserver = null;
+
+/** Sluit app-dialogen zodra de schil vergrendelt (dan wordt de app-inhoud leeggemaakt). */
+function watchLock(root) {
+  if (lockObserver) return;
+  lockObserver = new MutationObserver(() => {
+    if (!root.childElementCount) document.querySelectorAll('dialog.gb-modal').forEach((d) => d.close());
+  });
+  lockObserver.observe(root, { childList: true });
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function icon(d, cls = 'gb-d-ico') {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('class', cls);
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', d);
+  svg.append(path);
+  return svg;
+}
+const ICON = {
+  back: 'M15 18l-6-6 6-6',
+  edit: 'M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3zM13.5 8.5l2 2',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  retry: 'M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5',
+};
+
+/** Metacritic-kleuren: groen 75+, geel 50–74, rood daaronder. */
+const scoreLevel = (n) => (n >= 75 ? 'good' : n >= 50 ? 'mixed' : 'bad');
+
+function openDetail(ctx, id) {
+  if (!findById(ctx.data.games, id)) return;
+  detail?.close();
+
+  const ctrl = new AbortController();
+  const s = { loading: true, error: '', candidates: [], current: null, info: null, picker: false, expanded: false };
+  let run = 0;
+
+  const heroEl = h('section', { class: 'gb-d-hero' });
+  const bodyEl = h('div', { class: 'gb-d-content' });
+  const dlg = h('dialog', { class: 'gb-detail gb-modal', 'aria-labelledby': 'gb-d-title' },
+    h('div', { class: 'gb-d-bar' },
+      h('button', { class: 'gb-d-round', type: 'button', 'aria-label': 'Terug', onClick: () => dlg.close() }, icon(ICON.back)),
+      h('button', { class: 'gb-d-round gb-d-editbtn', type: 'button', onClick: () => openEditor(ctx, id) },
+        icon(ICON.edit), h('span', {}, 'Bewerken'))),
+    h('div', { class: 'gb-d-scroll' }, heroEl, bodyEl));
+
+  const draw = () => {
+    const g = findById(ctx.data.games, id);
+    if (!g) { dlg.close(); return; }
+    heroEl.classList.remove('no-image');
+    heroEl.replaceChildren(...detailHero(g, s).filter(Boolean));
+    bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw }).filter(Boolean));
+  };
+
+  async function load(pick) {
+    const mine = ++run;
+    s.loading = true;
+    s.error = '';
+    s.picker = false;
+    draw();
+    try {
+      const g = findById(ctx.data.games, id);
+      if (!s.candidates.length) s.candidates = await findCandidates(g, ctrl.signal);
+      const want = pick ?? chosenPage.get(id);
+      s.current = s.candidates.find((c) => c.pageid === want) || s.candidates[0] || null;
+      s.info = null;
+      if (mine !== run) return;
+      draw();
+      s.info = s.current ? await loadDetails(s.current, ctrl.signal) : null;
+    } catch {
+      if (ctrl.signal.aborted || mine !== run) return;
+      s.error = navigator.onLine
+        ? 'De informatie kon niet worden opgehaald. Probeer het later nog eens.'
+        : 'Je bent offline. De informatie over de game wordt geladen zodra je weer verbinding hebt.';
+    }
+    if (mine !== run) return;
+    s.loading = false;
+    draw();
+  }
+
+  dlg.addEventListener('close', () => {
+    ctrl.abort();
+    dlg.remove();
+    if (detail?.dlg === dlg) detail = null;
+  });
+  detail = { dlg, refresh: draw, close: () => dlg.close() };
+  draw();
+  document.body.append(dlg);
+  dlg.showModal();
+  dlg.querySelector('.gb-d-scroll').scrollTop = 0;
+  load();
+}
+
+function coverImage(src, alt, cls) {
+  const img = h('img', { src, alt, class: cls, decoding: 'async', referrerpolicy: 'no-referrer' });
+  img.addEventListener('error', () => img.closest('.gb-d-hero')?.classList.add('no-image'));
+  return img;
+}
+
+function detailHero(g, s) {
+  const image = s.info?.image || s.current?.thumb || '';
+  const first = (g.platforms || [])[0];
+  const placeholder = h('div', { class: 'gb-d-cover gb-d-cover-empty', dataset: first ? { platform: platformKey(first) } : {} },
+    first ? platformIcon(first) : null,
+    h('span', {}, (g.title.match(/[A-Za-z0-9]/)?.[0] || '?').toUpperCase()));
+
+  let cover;
+  if (image) cover = h('div', { class: 'gb-d-coverwrap' }, coverImage(image, `Boxart van ${g.title}`, 'gb-d-cover'), placeholder);
+  else if (s.loading) cover = h('div', { class: 'gb-d-cover gb-skel', 'aria-label': 'Boxart laden' });
+  else cover = placeholder;
+
+  const st = STATUS[g.status] || STATUS.backlog;
+  const f = s.info?.facts || {};
+  const year = s.info?.release?.year || (g.years?.length ? Math.min(...g.years) : null);
+  const subtitle = [f.developer?.[0], year].filter(Boolean).join(' · ');
+
+  return [
+    image ? h('div', { class: 'gb-d-backdrop', 'aria-hidden': 'true' }, coverImage(image, '', '')) : null,
+    h('div', { class: 'gb-d-hero-inner' },
+      cover,
+      h('div', { class: 'gb-d-head' },
+        h('h1', { id: 'gb-d-title', class: 'gb-d-title' }, g.title),
+        subtitle ? h('p', { class: 'gb-d-sub' }, subtitle) : (s.loading ? h('p', { class: 'gb-d-sub gb-skel gb-skel-line' }) : null),
+        h('div', { class: 'gb-d-tags' },
+          h('span', { class: `gb-tag gb-d-status gb-d-status-${g.status}` }, st.icon ? `${st.icon} ` : '', st.label),
+          ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
+          ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year' }, String(y)))))),
+  ];
+}
+
+function scoreCard(s) {
+  const head = h('h2', { class: 'gb-d-label' }, 'Metascore');
+  if (s.loading && !s.info) {
+    return h('section', { class: 'card gb-d-tile' }, head, h('div', { class: 'gb-d-score gb-skel' }), h('p', { class: 'gb-skel gb-skel-line' }));
+  }
+  const mc = s.info?.metacritic || [];
+  const gr = s.info?.gamerankings || [];
+  const main = mc[0] || gr[0];
+  if (!main) {
+    return h('section', { class: 'card gb-d-tile' }, head,
+      h('div', { class: 'gb-d-score gb-d-score-none', 'aria-label': 'Geen score' }, '–'),
+      h('p', { class: 'gb-d-note' }, s.error ? 'Niet beschikbaar' : 'Geen score bekend'));
+  }
+  const isMc = Boolean(mc[0]);
+  const list = isMc ? mc : gr;
+  return h('section', { class: 'card gb-d-tile' },
+    h('h2', { class: 'gb-d-label' }, isMc ? 'Metascore' : 'GameRankings'),
+    h('div', { class: 'gb-d-score', dataset: { level: scoreLevel(main.score) }, 'aria-label': `${main.score} van de 100` }, String(main.score)),
+    h('p', { class: 'gb-d-note' },
+      main.platform ? `${main.platform}` : (isMc ? 'Gemiddelde van recensies' : 'Gemiddelde (retro)')),
+    list.length > 1 ? h('ul', { class: 'gb-d-subscores' }, list.slice(1, 5).map((r) => h('li', {},
+      h('span', {}, r.platform || 'Overig'),
+      h('strong', { dataset: { level: scoreLevel(r.score) } }, String(r.score))))) : null);
+}
+
+function progressCard(g, ctx) {
+  const st = STATUS[g.status] || STATUS.backlog;
+  const next = NEXT[g.status] || 'playing';
+  return h('section', { class: 'card gb-d-tile' },
+    h('h2', { class: 'gb-d-label' }, 'Jouw voortgang'),
+    h('button', {
+      type: 'button', class: 'gb-d-statusbtn', dataset: { status: g.status },
+      'aria-label': `Status: ${st.label}. Tik voor ${STATUS[next].label}`,
+      onClick: async () => {
+        await ctx.update((d) => {
+          const changes = { status: next };
+          if (next === 'done' && !g.finished) changes.finished = today();
+          updateById(d.games, g.id, changes);
+        });
+      },
+    }, h('span', { class: 'gb-d-statusdot' }, st.icon), st.label),
+    h('div', { class: 'gb-d-stars', 'aria-label': g.rating ? `${g.rating} van 5 sterren` : 'Nog geen beoordeling' },
+      [1, 2, 3, 4, 5].map((n) => h('span', { class: n <= (g.rating || 0) ? 'is-on' : '' }, '★'))),
+    g.status === 'done' && g.finished ? h('p', { class: 'gb-d-note' }, `Uitgespeeld ${formatDate(g.finished)}`) : null);
+}
+
+function detailBody(g, s, { ctx, load, redraw }) {
+  const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s), progressCard(g, ctx))];
+  const info = s.info;
+
+  if (s.error) {
+    parts.push(h('section', { class: 'card gb-d-section gb-d-message' },
+      h('p', {}, s.error),
+      h('button', { type: 'button', class: 'btn', onClick: () => load(s.current?.pageid) }, icon(ICON.retry), 'Opnieuw proberen')));
+  } else if (s.loading && !info) {
+    parts.push(h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': 'Informatie laden' },
+      h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line' }),
+      h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line gb-skel-short' })));
+  } else if (!info) {
+    parts.push(h('section', { class: 'card gb-d-section gb-d-message' },
+      h('p', {}, 'Er is geen informatie over deze game gevonden op Wikipedia.'),
+      h('p', { class: 'muted' }, 'Tip: controleer de spelling van de titel via Bewerken.')));
+  }
+
+  if (info?.summary) {
+    const paras = info.summary.split(/\n+/).map((t) => t.trim()).filter(Boolean);
+    const long = info.summary.length > 420;
+    parts.push(h('section', { class: 'card gb-d-section' },
+      h('h2', { class: 'gb-d-h2' }, 'Over de game'),
+      h('div', { class: `gb-d-summary${long && !s.expanded ? ' is-clamped' : ''}`, lang: info.summaryLang },
+        paras.map((t) => h('p', {}, t))),
+      long ? h('button', {
+        type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.expanded),
+        onClick: () => { s.expanded = !s.expanded; redraw(); },
+      }, s.expanded ? 'Minder tonen' : 'Lees meer') : null,
+      info.summaryLang === 'en' ? h('p', { class: 'gb-d-note' }, 'Samenvatting in het Engels; er is geen Nederlands artikel.') : null));
+  }
+
+  if (info) {
+    const f = info.facts;
+    const rows = [
+      ['Ontwikkelaar', f.developer], ['Uitgever', f.publisher],
+      ['Eerste release', info.release ? [info.release.text] : []],
+      ['Spelmodi', f.modes], ['Serie', f.series], ['Regie', f.director], ['Muziek', f.composer],
+    ].filter(([, v]) => v?.length);
+    if (f.genre.length || rows.length) {
+      parts.push(h('section', { class: 'card gb-d-section' },
+        h('h2', { class: 'gb-d-h2' }, 'Details'),
+        f.genre.length ? h('div', { class: 'gb-d-genres', 'aria-label': 'Genre' }, f.genre.map((x) => h('span', { class: 'gb-d-genre' }, x))) : null,
+        rows.length ? h('dl', { class: 'gb-d-facts' }, rows.map(([k, v]) => h('div', {},
+          h('dt', {}, k), h('dd', {}, v.slice(0, 4).join(', '))))) : null));
+    }
+  }
+
+  const mine = [
+    ['Gespeeld op', g.playedOn], ['Uitgespeeld op', g.finished ? formatDate(g.finished) : ''],
+  ].filter(([, v]) => v);
+  if (mine.length || g.notes) {
+    parts.push(h('section', { class: 'card gb-d-section' },
+      h('h2', { class: 'gb-d-h2' }, 'Jouw notities'),
+      mine.length ? h('dl', { class: 'gb-d-facts' }, mine.map(([k, v]) => h('div', {}, h('dt', {}, k), h('dd', {}, v)))) : null,
+      g.notes ? h('p', { class: 'gb-d-notes' }, g.notes) : null));
+  }
+
+  // Bron, links en een andere pagina kiezen als de match niet klopt
+  const others = s.candidates.filter((c) => c.pageid !== s.current?.pageid);
+  const ext = (href, text) => h('a', { class: 'gb-d-link', href, target: '_blank', rel: 'noopener noreferrer' }, text, icon(ICON.external));
+  parts.push(h('footer', { class: 'gb-d-foot' },
+    h('div', { class: 'gb-d-links' },
+      info ? ext(info.wikiUrl, 'Wikipedia') : null,
+      ext(`https://www.metacritic.com/search/${encodeURIComponent(g.title)}/`, 'Metacritic')),
+    info && s.current && norm(s.current.title) !== norm(g.title)
+      ? h('p', { class: 'gb-d-note' }, `Gevonden als "${s.current.title}"`) : null,
+    others.length && !s.loading ? h('button', {
+      type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.picker),
+      onClick: () => { s.picker = !s.picker; redraw(); },
+    }, 'Niet de juiste game?') : null,
+    s.picker ? h('ul', { class: 'card gb-d-picker' }, others.map((c) => h('li', {},
+      h('button', {
+        type: 'button',
+        onClick: () => { chosenPage.set(g.id, c.pageid); s.expanded = false; load(c.pageid); },
+      },
+      c.thumb ? h('img', { src: c.thumb, alt: '', class: 'gb-d-pthumb', referrerpolicy: 'no-referrer' }) : h('span', { class: 'gb-d-pthumb' }),
+      h('span', { class: 'gb-d-ptext' }, h('strong', {}, c.title), c.description ? h('span', {}, c.description) : null))))) : null,
+    h('p', { class: 'gb-d-source' }, 'Informatie en boxart: Wikipedia en Wikidata.')));
+
+  return parts;
+}
+
+const norm = (t) => String(t || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, '');

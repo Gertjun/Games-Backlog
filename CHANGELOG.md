@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0
+
+- Nieuw: tik op een game voor een detailscherm met de boxart, de Metascore (of de GameRankings-score bij oudere retro-games), genre, ontwikkelaar, uitgever, eerste releasedatum, spelmodi, serie, regie en muziek, plus een korte samenvatting (in het Nederlands als er een Nederlands Wikipedia-artikel is).
+- Op het detailscherm zie je ook je eigen voortgang: tik op de status om hem te wijzigen, en je sterren, speeldatum en notities staan erbij. Bewerken gaat via de knop rechtsboven.
+- De informatie komt gratis van Wikipedia en Wikidata. Alleen de titel (en het jaar) van de game wordt daarvoor opgezocht; er wordt niets uit je kluis meegestuurd of opgeslagen. Offline toont het scherm alleen je eigen gegevens.
+- Klopt de gevonden game niet? Kies via "Niet de juiste game?" een ander resultaat.
+- Opgelost: open schermen (bewerken, details) sluiten nu ook als de app vergrendelt.
+
 ## 1.3.0
 
 - Platformlabels hebben nu elk een eigen kleur, gebaseerd op de kleur die bij de console hoort: bijvoorbeeld rood voor NES en Switch, paars voor SNES, groen voor Game Boy en blauw voor PlayStation.
