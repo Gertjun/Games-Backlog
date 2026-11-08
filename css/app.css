@@ -7,13 +7,72 @@
    manifest.webmanifest aanpassen). */
 /* @accent-start */
 :root {
-  --accent: #7c3aed;
+  --accent: #5b5cf0;
   --accent-contrast: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --accent: #a375f2; --accent-contrast: #0b0d12; }
+  :root { --accent: #8b8cff; --accent-contrast: #0b0d12; }
 }
 /* @accent-end */
+
+/* ---------- Thema (afgeleid van het app-icoon) ----------
+   Diep nachtblauw met een verloop van helderblauw naar violet. */
+:root {
+  --brand-blue: #2f80ff;
+  --brand-violet: #a24dfb;
+  --brand-gradient: linear-gradient(135deg, #2f80ff 0%, #6366f1 50%, #a24dfb 100%);
+  --bg: #eef0fb;
+  --surface: #ffffff;
+  --surface-2: #e6e8f8;
+  --text: #11143a;
+  --muted: #5b6190;
+  --border: #d9dcf1;
+  --shadow: 0 1px 2px rgb(17 20 58 / 0.05), 0 6px 20px rgb(60 70 180 / 0.08);
+  --glow-1: rgb(47 128 255 / 0.12);
+  --glow-2: rgb(162 77 251 / 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #080a1f;
+    --surface: #10133a;
+    --surface-2: #1a1e4c;
+    --text: #eceefe;
+    --muted: #9ca3d4;
+    --border: #262b60;
+    --shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
+    --glow-1: rgb(47 128 255 / 0.22);
+    --glow-2: rgb(162 77 251 / 0.22);
+  }
+}
+
+/* Zachte blauwe en violette gloed op de achtergrond, zoals in het icoon */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 60% at 0% 0%, var(--glow-1), transparent 60%),
+    radial-gradient(110% 55% at 100% 100%, var(--glow-2), transparent 60%);
+}
+body { background-color: var(--bg); }
+
+.app-title {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+}
+.auth-logo, .privacy-cover img {
+  border-radius: 22%;
+  box-shadow: 0 10px 30px rgb(91 92 240 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.btn-primary { background: var(--brand-gradient); color: #fff; border: 0; }
+.btn-primary[data-busy]::after { border-color: #fff transparent #fff transparent; }
+.card { border-color: color-mix(in srgb, var(--accent) 14%, var(--border)); }
+
 
 /* ---------- Games Backlog ---------- */
 .gb-stats { padding: 12px 16px; display: grid; gap: 10px; }
@@ -21,7 +80,7 @@
 .gb-stat-row strong { color: var(--text); }
 .gb-stat-row > strong:last-child { margin-left: auto; }
 .gb-bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-.gb-bar-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--ok)); transition: width 0.3s; }
+.gb-bar-fill { height: 100%; width: 0; background: var(--brand-gradient); transition: width 0.3s; }
 
 
 .gb-chips {
@@ -34,7 +93,7 @@
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   font: inherit; font-size: 0.9rem; cursor: pointer;
 }
-.gb-chip[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.gb-chip[aria-selected="true"] { background: var(--brand-gradient); border-color: transparent; color: #fff; }
 .gb-chip-n { margin-left: 6px; opacity: 0.7; font-variant-numeric: tabular-nums; }
 
 .gb-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -91,8 +150,8 @@
   position: fixed; z-index: 10;
   right: calc(20px + var(--safe-right)); bottom: calc(20px + var(--safe-bottom));
   width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
-  background: var(--accent); color: var(--accent-contrast); font-size: 2rem; line-height: 1;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
+  background: var(--brand-gradient); color: #fff; font-size: 2rem; line-height: 1;
+  box-shadow: 0 8px 24px rgb(91 92 240 / 0.45);
 }
 
 .gb-form { padding-top: 12px; }

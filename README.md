@@ -34,7 +34,7 @@ js/core/                De template-kern (niet aanpassen per app)
   sync.js               Sync-logica (upload, download, samenvoegen, versiebewaking)
   records.js            Hulpfuncties voor records (id, updatedAt, verwijderen, opruimen)
   dom.js                h(), formatEuro(), parseEuro(), today(), saveFile()
-icons/                  App-iconen (icon.svg is de bron)                ← per app
+icons/                  App-iconen (icon-1024.png is de bron)                ← per app
 docs/CLAUDE-INSTRUCTIES.md   Instructies om in je Claude-project te plakken
 docs/STARTPROMPT.md     Eerste bericht voor een nieuw app-project
 CHANGELOG.md            Wijzigingen per versie
