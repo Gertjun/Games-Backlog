@@ -98,10 +98,11 @@ body { background-color: var(--bg); }
 
 .gb-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gb-filters select { min-width: 0; }
-.gb-filters select:last-child { grid-column: 1 / -1; }
 @media (min-width: 640px) {
-  .gb-filters { grid-template-columns: repeat(5, 1fr); }
-  .gb-filters select:last-child { grid-column: auto; }
+  .gb-filters { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 960px) {
+  .gb-filters { grid-template-columns: repeat(6, 1fr); }
 }
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }

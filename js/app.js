@@ -36,7 +36,8 @@ const NEXT = { backlog: 'playing', playing: 'done', done: 'backlog', dropped: 'b
 const SECTION = { modern: 'Modern', retro: 'Retro' };
 
 // Filters gelden alleen voor deze sessie (niet opgeslagen buiten de kluis).
-const view = { q: '', status: '', section: '', group: '', platform: '', year: '', sort: 'group' };
+// grouped: per serie tonen of als één lijst; sort geldt binnen elke serie.
+const view = { q: '', status: '', section: '', group: '', platform: '', year: '', grouped: 'yes', sort: 'list' };
 
 const collator = new Intl.Collator('nl', { numeric: true, sensitivity: 'base' });
 const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort(collator.compare);
@@ -172,7 +173,8 @@ export const app = {
       select('group', 'Serie', [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])]),
       select('platform', 'Platform', [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])]),
       select('year', 'Jaar van release', [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])]),
-      select('sort', 'Sorteren', [['group', 'Per serie'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
+      select('grouped', 'Weergave', [['yes', 'Per serie'], ['no', 'Eén lijst']]),
+      select('sort', 'Sorteren', [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
 
     const addBtn = h('button', {
       class: 'gb-fab', type: 'button', 'aria-label': 'Game toevoegen',
@@ -287,24 +289,26 @@ function sortGames(list) {
     return copy.sort((a, b) => sc(b) - sc(a) || byTitle(a, b));
   }
   if (view.sort === 'rating') return copy.sort((a, b) => (b.rating || 0) - (a.rating || 0) || byTitle(a, b));
-  // Per serie: modern eerst, binnen een serie de volgorde van de lijst
+  // Lijstvolgorde: modern eerst, verder de volgorde waarin ze zijn toegevoegd
   return copy.sort((a, b) => (a.section === 'modern' ? 0 : 1) - (b.section === 'modern' ? 0 : 1));
 }
 
 function renderList(el, all, ctx) {
-  const list = sortGames(filterGames(all, view));
-  if (!list.length) {
+  const filtered = filterGames(all, view);
+  if (!filtered.length) {
     el.replaceChildren(h('div', { class: 'empty' },
       h('p', { class: 'empty-title' }, all.length ? 'Geen games gevonden' : 'Nog geen games'),
       h('p', { class: 'muted' }, all.length ? 'Pas je zoekopdracht of filters aan.' : 'Tik op + om een game toe te voegen.')));
     return;
   }
-  if (view.sort !== 'group') {
-    el.replaceChildren(h('ul', { class: 'card gb-games' }, list.map((g) => gameRow(g, ctx))));
+  if (view.grouped !== 'yes') {
+    el.replaceChildren(h('ul', { class: 'card gb-games' }, sortGames(filtered).map((g) => gameRow(g, ctx))));
     return;
   }
+  // De series houden altijd hun vaste volgorde (modern eerst, dan de lijst);
+  // de gekozen sortering geldt binnen elke serie.
   const groups = new Map();
-  for (const g of list) {
+  for (const g of filtered.slice().sort((a, b) => (a.section === 'modern' ? 0 : 1) - (b.section === 'modern' ? 0 : 1))) {
     const key = `${SECTION[g.section] || 'Overig'} · ${g.group || 'Overig'}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(g);
@@ -313,7 +317,7 @@ function renderList(el, all, ctx) {
     h('h2', { class: 'gb-group-head' },
       h('span', {}, name),
       h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
-    h('ul', { class: 'card gb-games' }, items.map((g) => gameRow(g, ctx))))));
+    h('ul', { class: 'card gb-games' }, sortGames(items).map((g) => gameRow(g, ctx))))));
 }
 
 function gameRow(g, ctx) {

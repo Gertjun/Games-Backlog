@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+- Nieuw: sorteren binnen de series. Met de nieuwe keuze "Weergave" kies je tussen "Per serie" en "Eén lijst"; de sortering (A–Z, Jaar van release, Metascore, Laatst gewijzigd, Beoordeling) werkt nu in beide. Per serie blijven de series op hun vaste plek staan en wordt alleen de volgorde van de games binnen elke serie aangepast.
+- De vroegere sorteerkeuze "Per serie" heet nu "Lijstvolgorde": de volgorde waarin de games in je lijst staan.
+
 ## 1.6.0
 
 - Nieuw: elke game krijgt nu een jaarlabel, ook de moderne games. Heeft een game nog geen jaar, dan neemt de app het eerste releasejaar over uit de informatie die al bij de scores en boxart is opgehaald (Wikipedia/Wikidata). Nieuwe games krijgen hun jaar vanzelf zodra die informatie binnen is.
