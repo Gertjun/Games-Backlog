@@ -23,11 +23,12 @@ import { dropdown } from './dropdown.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
-import { findCandidates, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
+import { findCandidates, findPage, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
+import { applyCorrections } from './corrections.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 4;
+const SCHEMA = 5;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -121,7 +122,7 @@ export const app = {
       rating: 0, playedOn: '', finished: '', notes: '',
       ...withTitleInfo({ title, platforms }),
     }));
-    return { schema: SCHEMA, games: splitSeedVersions(games, splitTitle), gameInfo: [] };
+    return applyCorrections({ schema: SCHEMA, games: splitSeedVersions(games, splitTitle), gameInfo: [] });
   },
 
   migrate(data) {
@@ -139,6 +140,8 @@ export const app = {
     }
     // Schema 4: gecombineerde games uit de startlijst splitsen in gekoppelde versies
     splitSeedVersions(data.games, (t) => splitTitle(t, known));
+    // Schema 5: eenmalige verbeteringen aan titels, jaren en platforms (zie corrections.js)
+    if ((data.schema || 0) < 5) applyCorrections(data);
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -815,7 +818,10 @@ function openDetail(ctx, id) {
     const mine = ++run;
     const g = findById(ctx.data.games, id);
     const info = stored();
-    let cand = pick || (info?.found && info.query === g.title || info?.pinned ? candidateFrom(info) : null);
+    let cand = pick || (info?.found && (info.query === g.title || info.pinned) ? candidateFrom(info) : null);
+    const want = !pick && !info?.found ? info?.want : '';
+    // Zelf vastgelegd dat er (nog) geen pagina bij hoort: niet automatisch zoeken
+    const noMatch = !pick && info?.pinned && !info.found;
     if (!pick && info?.found) s.core = info; // meteen tonen wat al bewaard is
     if (pick) { s.core = null; s.summary = null; }
     s.loading = true;
@@ -823,7 +829,8 @@ function openDetail(ctx, id) {
     s.picker = false;
     draw();
     try {
-      if (!cand) {
+      if (!cand && want) cand = await findPage(want, ctrl.signal);
+      if (!cand && !noMatch) {
         if (!s.candidates.length) s.candidates = await findCandidates(g, ctrl.signal);
         cand = bestCandidate(s.candidates);
         if (!cand) {
@@ -837,7 +844,7 @@ function openDetail(ctx, id) {
         if (mine !== run) return;
         s.core = core;
         draw();
-        const pinned = Boolean(pick) || Boolean(info?.pinned && !pick && info.pageid === core.pageid);
+        const pinned = Boolean(pick) || Boolean(want) || Boolean(info?.pinned && !pick && info.pageid === core.pageid);
         const fresh = toStored(core, g.title, pinned);
         if (infoChanged(stored(), fresh)) await ctx.update((d) => putInfo(d, id, fresh));
         s.summary = await loadSummary(core, ctrl.signal).catch(() => null);

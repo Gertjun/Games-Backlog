@@ -11,7 +11,7 @@
 //   pageid, title, qid, nlTitle, description, image, release, facts,
 //   metacritic: [{ score, platform }], gamerankings: [{ score, platform }] }
 
-import { findCandidates, loadCore } from './gameinfo.js';
+import { findCandidates, findPage, loadCore } from './gameinfo.js';
 import { alive, findById } from './core/records.js';
 
 const CONCURRENCY = 3;
@@ -103,8 +103,9 @@ export function startEnrich(ctx, schema) {
     while (queue.length && mine === generation) {
       const g = queue.shift();
       try {
-        const best = bestCandidate(await findCandidates(g));
-        pending.push([g.id, best ? toStored(await loadCore(best), g.title, false) : notFound(g.title)]);
+        const want = infos.get(g.id)?.want;
+        const best = want ? await findPage(want) : bestCandidate(await findCandidates(g));
+        pending.push([g.id, best ? toStored(await loadCore(best), g.title, Boolean(want)) : notFound(g.title)]);
         failures = 0;
       } catch {
         failures += 1;

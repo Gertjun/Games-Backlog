@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.15.0
+
+Verbeteringen in de lijst, eenmalig doorgevoerd bij het openen van de app. Games die je zelf al had aangepast, blijven zoals ze zijn. Je status, sterren en notities blijven bij alle games staan.
+
+- **Juiste game, jaar en score**: *Kingdom Come: Deliverance 2* (2025), *Last of Us Part 2* (2020), *Last of Us Part 1* (de PS5-remake, 2022), *Mass Effect 1, 2 en 3* (Legendary Edition, 2021) en *Pokémon Ruby/Sapphire/Emerald* (de originelen, 2002). Hun score en boxart worden opnieuw opgehaald van de juiste Wikipedia-pagina, en die pagina wordt vastgezet.
+- **Alleen het jaar aangepast**: *Horizon Zero Dawn Remastered* (2024), *Death Stranding* (Director's Cut, 2021), *Skyrim* (Anniversary Edition, 2021) en *Castlevania - Order of Ecclesia* (2008). Deze versies hebben geen eigen Wikipedia-pagina, dus de score blijft die van het origineel.
+- **Nieuwe of verbeterde titels**: *Hogwarts Legacy*, *Lego Harry Potter Collection* (2016), *Wo Long: Fallen Dynasty* (2023), *New Super Mario Bros. Wii*, *Assassin's Creed Shadows*, *The Callisto Protocol*, *Castlevania - Dawn of Sorrow*, *Castlevania II - Simon's Quest* en *Final Fantasy Crystal Chronicles*.
+- *Oracle of Seasons* en *Oracle of Ages* hebben nu elk een eigen kaart.
+- De Pokémon-games hebben nu een platform: GB, NDS, GBA of 3DS.
+- *Final Fantasy XIV reboot*, *XV* en *XVI* staan nu bij **Modern · Final Fantasy**. Ze horen nog steeds bij de serie Final Fantasy.
+- *Until Dawn 2* moet nog uitkomen. De app zoekt er daarom geen informatie meer voor, zodat er niet per ongeluk het jaar en de score van de eerste *Until Dawn* bij komen. Komt hij uit, kies dan in het detailscherm bij "Niet de juiste game?" de goede pagina.
+- Een apparaat met een oudere versie vraagt eerst om bij te werken voordat je daar weer kunt bewerken.
+
 ## 1.14.1
 
 - Op iPad en laptop zijn alle kaarten nu precies even hoog, zodat de rijen netjes uitlijnen. Er is altijd ruimte voor twee regels titel en één regel labels. Een korte titel staat in het midden van de kaart.

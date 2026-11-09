@@ -7,6 +7,7 @@
 // opgeslagen buiten de kluis.
 //
 //   findCandidates(game)   → mogelijke Wikipedia-pagina's, beste eerst
+//   findPage(title)        → één vaste pagina op titel
 //   loadDetails(candidate) → boxart, samenvatting, genre, Metacritic, …
 
 const WIKI = (lang) => `https://${lang}.wikipedia.org/w/api.php`;
@@ -96,22 +97,11 @@ export function findCandidates(game, signal) {
     try {
       const json = await api(WIKI('en'), {
         action: 'query', generator: 'search', gsrsearch: query, gsrlimit: '10', gsrnamespace: '0',
-        prop: 'pageimages|pageprops|description|langlinks', piprop: 'thumbnail', pithumbsize: '500',
-        pilicense: 'any', ppprop: 'wikibase_item', lllang: 'nl', lllimit: 'max', redirects: '1',
+        ...PAGE_PROPS,
       }, t.signal);
       const pages = (json.query?.pages || []).filter((p) => !p.missing);
       return pages
-        .map((p) => ({
-          pageid: p.pageid,
-          title: p.title,
-          description: p.description || '',
-          qid: p.pageprops?.wikibase_item || '',
-          nlTitle: p.langlinks?.find((l) => l.lang === 'nl')?.title || '',
-          thumb: safeImage(p.thumbnail?.source),
-          index: p.index,
-          score: score(p, game),
-          game: isGame(p.description),
-        }))
+        .map((p) => ({ ...toCandidate(p), score: score(p, game) }))
         .sort((x, y) => y.score - x.score)
         .slice(0, 5);
     } finally {
@@ -119,6 +109,40 @@ export function findCandidates(game, signal) {
     }
   });
 }
+
+/**
+ * Eén vaste Wikipedia-pagina op titel (doorverwijzingen worden gevolgd).
+ * Voor games waarvan de juiste pagina vooraf bekend is (zie corrections.js).
+ * Geeft null als de pagina niet bestaat.
+ */
+export function findPage(title, signal) {
+  return cached(candidateCache, `page:${title}`, async () => {
+    const t = withTimeout(signal);
+    try {
+      const json = await api(WIKI('en'), { action: 'query', titles: title, ...PAGE_PROPS }, t.signal);
+      const page = (json.query?.pages || []).find((p) => !p.missing && !p.invalid);
+      return page ? { ...toCandidate(page), score: 10, game: true } : null;
+    } finally {
+      t.done();
+    }
+  });
+}
+
+const PAGE_PROPS = {
+  prop: 'pageimages|pageprops|description|langlinks', piprop: 'thumbnail', pithumbsize: '500',
+  pilicense: 'any', ppprop: 'wikibase_item', lllang: 'nl', lllimit: 'max', redirects: '1',
+};
+
+const toCandidate = (p) => ({
+  pageid: p.pageid,
+  title: p.title,
+  description: p.description || '',
+  qid: p.pageprops?.wikibase_item || '',
+  nlTitle: p.langlinks?.find((l) => l.lang === 'nl')?.title || '',
+  thumb: safeImage(p.thumbnail?.source),
+  index: p.index,
+  game: isGame(p.description),
+});
 
 /* ---------- Details ---------- */
 
