@@ -96,13 +96,20 @@ body { background-color: var(--bg); }
 .gb-chip[aria-selected="true"] { background: var(--brand-gradient); border-color: transparent; color: #fff; }
 .gb-chip-n { margin-left: 6px; opacity: 0.7; font-variant-numeric: tabular-nums; }
 
-.gb-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.gb-filters select { min-width: 0; }
+/* Filter, Weergave en Sorteren. Op een smal scherm vallen de groepen weg
+   (display: contents) en staan de statusknoppen en keuzelijsten compact in
+   een raster, zonder koppen. In de zijbalk (vanaf 1000px) staan ze in
+   groepen onder een kop; zie de media query onderaan. */
+.gb-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gb-controls select { min-width: 0; }
+.gb-ctl, .gb-ctl-fields { display: contents; }
+.gb-ctl-title { display: none; }
+.gb-controls .gb-chips { grid-column: 1 / -1; margin-bottom: 0; }
 @media (min-width: 640px) {
-  .gb-filters { grid-template-columns: repeat(3, 1fr); }
+  .gb-controls { grid-template-columns: repeat(3, 1fr); }
 }
 @media (min-width: 960px) {
-  .gb-filters { grid-template-columns: repeat(6, 1fr); }
+  .gb-controls { grid-template-columns: repeat(6, 1fr); }
 }
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }
@@ -495,7 +502,16 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
     padding: 2px; margin: -2px; scrollbar-width: thin;
   }
   .gb-chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
-  .gb-filters { grid-template-columns: 1fr; }
+  .gb-controls .gb-chips { margin: 0; }
+
+  /* Zijbalk: elke groep met een kop erboven */
+  .gb-controls { grid-template-columns: 1fr; gap: 20px; }
+  .gb-ctl, .gb-ctl-fields { display: grid; gap: 8px; min-width: 0; }
+  .gb-ctl { gap: 10px; }
+  .gb-ctl-title {
+    display: block; margin: 0 4px; font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  }
   .gb-list .gb-group:first-child .gb-group-head { margin-top: 0; }
 }
 

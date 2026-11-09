@@ -168,13 +168,23 @@ export const app = {
       onChange: (e) => { view[key] = e.target.value; refresh(); },
     }, options.map(([value, text]) => h('option', { value, selected: view[key] === value }, text)));
 
-    const filters = h('div', { class: 'gb-filters' },
-      select('section', 'Categorie', [['', 'Alle systemen'], ['modern', 'Modern'], ['retro', 'Retro']]),
-      select('group', 'Serie', [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])]),
-      select('platform', 'Platform', [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])]),
-      select('year', 'Jaar van release', [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])]),
-      select('grouped', 'Weergave', [['yes', 'Per serie'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']]),
-      select('sort', 'Sorteren', [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
+    // De keuzes staan in groepen met een kop (Filter, Weergave, Sorteren).
+    // In de zijbalk (iPad liggend, laptop) zie je de koppen; op een smaller
+    // scherm vallen de groepen weg en staat alles compact naast elkaar zoals
+    // voorheen (zie .gb-controls in app.css).
+    const group = (id, title, ...content) => h('section', { class: 'gb-ctl', 'aria-labelledby': `gb-ctl-${id}` },
+      h('h2', { class: 'gb-ctl-title', id: `gb-ctl-${id}` }, title), ...content);
+
+    const controls = h('div', { class: 'gb-controls' },
+      group('filter', 'Filter', chipsEl, h('div', { class: 'gb-ctl-fields' },
+        select('section', 'Categorie', [['', 'Alle systemen'], ['modern', 'Modern'], ['retro', 'Retro']]),
+        select('group', 'Serie', [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])]),
+        select('platform', 'Platform', [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])]),
+        select('year', 'Jaar van release', [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])]))),
+      group('view', 'Weergave',
+        select('grouped', 'Weergave', [['yes', 'Per serie'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
+      group('sort', 'Sorteren',
+        select('sort', 'Sorteren', [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']])));
 
     const pickBtn = h('button', {
       class: 'btn gb-pick-btn', type: 'button',
@@ -189,7 +199,7 @@ export const app = {
     // Op een telefoon staat alles onder elkaar; op iPad (liggend) en laptop
     // staan voortgang, zoeken en filters in een zijbalk naast de lijst.
     root.replaceChildren(h('div', { class: 'gb-layout' },
-      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), pickBtn, search, chipsEl, filters),
+      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), pickBtn, search, controls),
       listEl), addBtn);
     refresh();
     watchLock(root);

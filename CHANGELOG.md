@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.0
+
+- De zijbalk op laptop en iPad (liggend) is overzichtelijker: de keuzes staan nu in groepen met een kop erboven. Onder **Filter** staan de statusknoppen (Alles, Backlog, Bezig, Uitgespeeld, Gestopt) en de keuzes voor systeem, serie, platform en jaar. Daaronder volgen **Weergave** (Per serie, Eén lijst, Boxart-muur) en **Sorteren**.
+- Op de iPhone en de iPad staand is er niets veranderd: daar staan de keuzes nog compact naast elkaar, zonder koppen.
+
 ## 1.10.0
 
 - De instellingen zijn op laptop en iPad (liggend) opnieuw ingedeeld. Je krijgt een groot venster met links de onderdelen (Synchronisatie, Beveiliging, Gegevens, Over de app en Dit apparaat), elk met een korte omschrijving. Rechts staat de inhoud van het gekozen onderdeel in losse kaarten naast elkaar, in plaats van één lange lijst om doorheen te scrollen.
