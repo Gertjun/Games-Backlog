@@ -181,7 +181,11 @@ export const app = {
       onClick: () => openEditor(ctx, null),
     }, '+');
 
-    root.replaceChildren(renderStats(all), search, chipsEl, filters, listEl, addBtn);
+    // Op een telefoon staat alles onder elkaar; op iPad (liggend) en laptop
+    // staan voortgang, zoeken en filters in een zijbalk naast de lijst.
+    root.replaceChildren(h('div', { class: 'gb-layout' },
+      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), search, chipsEl, filters),
+      listEl), addBtn);
     refresh();
     watchLock(root);
     detail?.refresh();

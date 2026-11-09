@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0
+
+- De app is nu ook prettig te gebruiken op iPad en laptop. Op een breder scherm staan de games als losse kaarten in twee of drie kolommen, in plaats van één smalle lijst in het midden.
+- Op een iPad in liggende stand en op een laptop staan de voortgang, het zoekveld, de statusknoppen en de filters in een vaste zijbalk links. Die blijft staan terwijl je door de lijst scrollt.
+- Op de laptop licht een kaart op als je er met de muis overheen gaat.
+- Op de iPhone is er niets veranderd.
+
 ## 1.7.0
 
 - Nieuw: sorteren binnen de series. Met de nieuwe keuze "Weergave" kies je tussen "Per serie" en "Eén lijst"; de sortering (A–Z, Jaar van release, Metascore, Laatst gewijzigd, Beoordeling) werkt nu in beide. Per serie blijven de series op hun vaste plek staan en wordt alleen de volgorde van de games binnen elke serie aangepast.
