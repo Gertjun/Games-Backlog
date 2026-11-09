@@ -11,6 +11,9 @@
 // Schema 2: `years` toegevoegd (jaar/jaren van release). Jaar en platform
 // tussen haakjes in de titel, zoals "(1985, NES)", worden labels.
 // Schema 3: collectie `gameInfo` toegevoegd (Metascore in de lijst).
+// Schema 4: optioneel veld `links` (sleutels van gekoppelde versies, zie
+//   js/versions.js). Games uit de startlijst als "A (PCE) / B (SNES)" worden
+//   losse, gekoppelde games.
 // 1.6.0: games zonder jaarlabel krijgen het releasejaar uit gameInfo.
 //   Optioneel veld `noAutoYear: true` = jaar zelf weggehaald, niet aanvullen.
 //   Geen schemawijziging: oudere versies laten het veld gewoon staan.
@@ -21,9 +24,10 @@ import { newRecord, alive, findById, updateById, removeById, mergeCollections, p
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
 import { findCandidates, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
+import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 3;
+const SCHEMA = 4;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -117,7 +121,7 @@ export const app = {
       rating: 0, playedOn: '', finished: '', notes: '',
       ...withTitleInfo({ title, platforms }),
     }));
-    return { schema: SCHEMA, games, gameInfo: [] };
+    return { schema: SCHEMA, games: splitSeedVersions(games, splitTitle), gameInfo: [] };
   },
 
   migrate(data) {
@@ -133,6 +137,8 @@ export const app = {
       if (g.deleted || Array.isArray(g.years)) continue;
       Object.assign(g, withTitleInfo(g, known));
     }
+    // Schema 4: gecombineerde games uit de startlijst splitsen in gekoppelde versies
+    splitSeedVersions(data.games, (t) => splitTitle(t, known));
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -150,6 +156,7 @@ export const app = {
   render(root, ctx) {
     const all = alive(ctx.data.games);
     infoById = new Map(alive(ctx.data.gameInfo).map((r) => [r.id, r]));
+    relatedById = relatedIndex(all);
     const listEl = h('div', { class: 'gb-list' });
     const chipsEl = h('div', { class: 'gb-chips', role: 'tablist', 'aria-label': 'Status' });
 
@@ -369,6 +376,7 @@ function gameRow(g, ctx) {
     g.rating ? h('span', { class: 'gb-stars', 'aria-label': `${g.rating} sterren` }, '★'.repeat(g.rating)) : null,
     g.status === 'done' && g.finished ? h('span', { class: 'gb-date' }, formatDate(g.finished)) : null,
     g.notes ? h('span', { class: 'gb-tag', title: 'Heeft notities', 'aria-label': 'Heeft notities' }, '📝') : null,
+    versionsTag(g),
   ];
   return h('li', { class: 'gb-game', dataset: { status: g.status } },
     h('button', {
@@ -384,6 +392,21 @@ function gameRow(g, ctx) {
       h('span', { class: 'gb-title', title: g.title }, g.title),
       h('span', { class: 'gb-meta' }, meta)),
     scoreBadge(infoById.get(g.id)));
+}
+
+/** Andere platforms waarop deze game (onder een andere titel) bestaat. */
+function otherPlatforms(g) {
+  const rel = relatedById.get(g.id) || [];
+  return uniq(rel.flatMap((o) => o.platforms || []).filter((p) => !(g.platforms || []).includes(p)));
+}
+
+function versionsTag(g) {
+  const rel = relatedById.get(g.id);
+  if (!rel?.length) return null;
+  const others = otherPlatforms(g);
+  const text = others.length ? `ook op ${others.join(', ')}` : `+${rel.length} ${rel.length === 1 ? 'versie' : 'versies'}`;
+  const label = `Ook verschenen als ${rel.map((o) => `${o.title}${o.platforms?.length ? ` (${o.platforms.join(', ')})` : ''}`).join(', ')}`;
+  return h('span', { class: 'gb-tag gb-tag-alt', title: label, 'aria-label': label }, icon(ICON.link, 'gb-link-ico'), text);
 }
 
 /** Metascore, of anders GameRankings (oudere retro-games). */
@@ -453,7 +476,9 @@ function wallTile(g, ctx) {
   const info = infoById.get(g.id);
   const st = STATUS[g.status] || STATUS.backlog;
   const sc = mainScore(info);
-  const label = [g.title, st.label, ...(g.platforms || []), sc ? `score ${sc.score}` : ''].filter(Boolean).join(', ');
+  const others = relatedById.has(g.id) ? otherPlatforms(g) : [];
+  const label = [g.title, st.label, ...(g.platforms || []), sc ? `score ${sc.score}` : '',
+    relatedById.has(g.id) ? `ook verschenen${others.length ? ` op ${others.join(', ')}` : ' in andere versies'}` : ''].filter(Boolean).join(', ');
   return h('li', { class: 'gb-wall-item', dataset: { status: g.status } },
     h('button', {
       type: 'button', class: 'gb-wall-tile', title: g.title, 'aria-label': label,
@@ -462,6 +487,7 @@ function wallTile(g, ctx) {
     },
     coverArt(g, info?.found ? wallImage(info.image) : ''),
     g.status !== 'backlog' ? h('span', { class: 'gb-wall-status', 'aria-hidden': 'true' }, st.icon) : null,
+    relatedById.has(g.id) ? h('span', { class: 'gb-wall-alt', 'aria-hidden': 'true' }, icon(ICON.link, 'gb-link-ico')) : null,
     sc ? h('span', { class: 'gb-wall-score', 'aria-hidden': 'true', dataset: { level: scoreLevel(sc.score), source: sc.source } }, String(sc.score)) : null));
 }
 
@@ -580,9 +606,14 @@ function openPicker(ctx, all) {
 
 /* ---------- Bewerken ---------- */
 
-function openEditor(ctx, id) {
+/** `versionOf`: id van een game waarvan je een versie op een ander platform toevoegt. */
+function openEditor(ctx, id, { versionOf = null } = {}) {
   const all = alive(ctx.data.games);
-  const g = id ? findById(ctx.data.games, id) : {
+  const base = versionOf ? findById(ctx.data.games, versionOf) : null;
+  const g = id ? findById(ctx.data.games, id) : base ? {
+    title: '', section: base.section, group: base.group || '', platforms: [], years: [], status: 'backlog',
+    rating: 0, playedOn: '', finished: '', notes: '',
+  } : {
     title: '', section: view.section || 'modern', group: view.group || '',
     platforms: view.platform ? [view.platform] : [], years: view.year ? [Number(view.year)] : [], status: 'backlog',
     rating: 0, playedOn: '', finished: '', notes: '',
@@ -662,18 +693,25 @@ function openEditor(ctx, id) {
     // Jaar zelf weggehaald? Dan niet automatisch opnieuw aanvullen.
     if (id) data.noAutoYear = !data.years.length && (Boolean(g.years?.length) || Boolean(g.noAutoYear));
     await ctx.update((d) => {
-      if (id) updateById(d.games, id, data);
-      else d.games.push(newRecord(data));
+      if (id) { updateById(d.games, id, data); return; }
+      if (base) {
+        const src = findById(d.games, base.id);
+        const key = linkKey({}, src);
+        if (!(src.links || []).includes(key)) updateById(d.games, src.id, { links: [...(src.links || []), key] });
+        data.links = [key];
+      }
+      d.games.push(newRecord(data));
     });
     close();
-    ctx.toast(id ? 'Opgeslagen' : `${data.title} toegevoegd`, 'ok');
+    ctx.toast(id ? 'Opgeslagen' : base ? `${data.title} toegevoegd als versie van ${base.title}` : `${data.title} toegevoegd`, 'ok');
   });
 
   const dlg = h('dialog', { class: 'sheet gb-modal', 'aria-labelledby': 'gb-edit-title' },
     h('div', { class: 'sheet-header' },
-      h('h2', { id: 'gb-edit-title' }, id ? 'Game bewerken' : 'Game toevoegen'),
+      h('h2', { id: 'gb-edit-title' }, id ? 'Game bewerken' : base ? 'Versie toevoegen' : 'Game toevoegen'),
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Sluiten', onClick: () => close() }, '✕')),
-    h('div', { class: 'sheet-body' }, form));
+    h('div', { class: 'sheet-body' },
+      base ? h('p', { class: 'gb-form-hint muted' }, `Een eigen kaart, gekoppeld aan ${base.title}.`) : null, form));
   function close() { dlg.close(); }
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
@@ -689,6 +727,7 @@ function openEditor(ctx, id) {
 
 let detail = null; // het open detailscherm, wordt bijgewerkt na een wijziging
 let infoById = new Map(); // game-id → bewaarde info (gameInfo), per render bijgewerkt
+let relatedById = new Map(); // game-id → gekoppelde versies, per render bijgewerkt
 let lockObserver = null;
 
 /** Sluit app-dialogen zodra de schil vergrendelt (dan wordt de app-inhoud leeggemaakt). */
@@ -717,6 +756,8 @@ const ICON = {
   back: 'M15 18l-6-6 6-6',
   edit: 'M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3zM13.5 8.5l2 2',
   external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  plus: 'M12 5v14M5 12h14',
   retry: 'M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5',
 };
 
@@ -731,7 +772,7 @@ function openDetail(ctx, id) {
   // core: boxart/scores/feiten (eerst uit de kluis, daarna vers), summary: samenvatting
   const s = {
     loading: true, error: '', core: null, summary: null, candidates: [],
-    picker: false, pickerLoading: false, expanded: false,
+    picker: false, pickerLoading: false, expanded: false, linking: false,
   };
   let run = 0;
 
@@ -916,8 +957,74 @@ function progressCard(g, ctx) {
     g.status === 'done' && g.finished ? h('p', { class: 'gb-d-note' }, `Uitgespeeld ${formatDate(g.finished)}`) : null);
 }
 
+/** "Andere versies": dezelfde game op andere platforms, met koppelen en loskoppelen. */
+function versionsSection(g, s, ctx, redraw) {
+  const all = alive(ctx.data.games);
+  const rel = relatedIndex(all).get(g.id) || [];
+  const items = rel.map((o) => {
+    const st = STATUS[o.status] || STATUS.backlog;
+    const year = o.years?.length ? Math.min(...o.years) : null;
+    return h('li', {}, h('button', {
+      type: 'button', class: 'gb-v-item', dataset: { status: o.status },
+      'aria-label': `${o.title}, ${(o.platforms || []).join(', ')}${year ? `, ${year}` : ''}, ${st.label}. Open details`,
+      onClick: () => openDetail(ctx, o.id),
+    },
+    h('span', { class: 'gb-v-dot', 'aria-hidden': 'true' }, st.icon),
+    h('span', { class: 'gb-v-text' },
+      h('strong', {}, o.title),
+      h('span', { class: 'gb-v-tags' },
+        ...(o.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
+        year ? h('span', { class: 'gb-tag gb-tag-year' }, String(year)) : null)),
+    icon(ICON.back, 'gb-d-ico gb-v-chev')));
+  });
+
+  // Koppelen aan een game die al in je lijst staat
+  const results = h('ul', { class: 'gb-v-results' });
+  const link = async (other) => {
+    await ctx.update((d) => {
+      const a = findById(d.games, g.id);
+      const b = findById(d.games, other.id);
+      const key = linkKey(a, b);
+      for (const x of [a, b]) if (!(x.links || []).includes(key)) updateById(d.games, x.id, { links: [...(x.links || []), key] });
+    });
+    s.linking = false;
+    ctx.toast(`Gekoppeld aan ${other.title}`, 'ok');
+  };
+  const search = h('input', {
+    type: 'search', class: 'gb-search', placeholder: 'Zoek de andere versie…', 'aria-label': 'Zoek een game om te koppelen', autocomplete: 'off',
+    onInput: (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const taken = new Set([g.id, ...rel.map((o) => o.id)]);
+      const hits = q ? all.filter((o) => !taken.has(o.id) && `${o.title} ${(o.platforms || []).join(' ')}`.toLowerCase().includes(q)).slice(0, 8) : [];
+      results.replaceChildren(...hits.map((o) => h('li', {}, h('button', { type: 'button', class: 'gb-v-hit', onClick: () => link(o) },
+        h('span', {}, o.title), h('span', { class: 'muted' }, (o.platforms || []).join(', '))))));
+      if (q && !hits.length) results.replaceChildren(h('li', { class: 'gb-d-note' }, 'Geen games gevonden.'));
+    },
+  });
+
+  return h('section', { class: 'card gb-d-section gb-versions' },
+    h('h2', { class: 'gb-d-h2' }, icon(ICON.link, 'gb-link-ico'), 'Andere versies'),
+    rel.length ? h('ul', { class: 'gb-v-list' }, items)
+      : h('p', { class: 'gb-d-note' }, 'Is deze game ook onder een andere titel of op een ander platform verschenen? Voeg die versie toe of koppel een game uit je lijst.'),
+    h('div', { class: 'gb-v-actions' },
+      h('button', { type: 'button', class: 'btn', onClick: () => openEditor(ctx, null, { versionOf: g.id }) }, icon(ICON.plus), 'Versie toevoegen'),
+      h('button', {
+        type: 'button', class: 'btn', 'aria-expanded': String(s.linking),
+        onClick: () => { s.linking = !s.linking; redraw(); if (s.linking) document.querySelector('.gb-versions .gb-search')?.focus(); },
+      }, icon(ICON.link), 'Koppel bestaande game'),
+      g.links?.length ? h('button', {
+        type: 'button', class: 'gb-d-more',
+        onClick: async () => {
+          if (!ctx.confirm(`"${g.title}" loskoppelen van de andere versies? De kaarten zelf blijven bestaan.`)) return;
+          await ctx.update((d) => { updateById(d.games, g.id, { links: [] }); });
+          ctx.toast('Losgekoppeld');
+        },
+      }, 'Loskoppelen') : null),
+    s.linking ? h('div', { class: 'gb-v-link' }, search, results) : null);
+}
+
 function detailBody(g, s, { ctx, load, redraw, openPicker }) {
-  const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s), progressCard(g, ctx))];
+  const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s), progressCard(g, ctx)), versionsSection(g, s, ctx, redraw)];
   const core = s.core;
   const skeleton = (label) => h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': label },
     h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line' }),

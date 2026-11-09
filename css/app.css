@@ -771,3 +771,52 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   .settings-sheet.is-wide .settings-card { padding: 20px 22px; }
   .settings-sheet.is-wide .settings-card h4 { font-size: 1.05rem; }
 }
+
+/* ---------- Gekoppelde versies (zelfde game, ander platform of andere titel) ---------- */
+.gb-link-ico { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.gb-tag-alt {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.gb-wall-alt {
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; background: var(--accent);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35), 0 0 0 2px rgb(255 255 255 / 0.85);
+}
+.gb-wall-alt .gb-link-ico { width: 13px; height: 13px; }
+
+.gb-versions .gb-d-h2 { display: flex; align-items: center; gap: 8px; }
+.gb-versions .gb-d-h2 .gb-link-ico { width: 18px; height: 18px; color: var(--accent); }
+.gb-v-list, .gb-v-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gb-v-item {
+  width: 100%; min-height: var(--tap); display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px; text-align: left; cursor: pointer; font: inherit; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+}
+.gb-v-item:focus-visible, .gb-v-hit:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gb-v-dot {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box;
+  display: grid; place-items: center; font-size: 0.72rem; font-weight: 800;
+  border: 2px solid var(--border); color: var(--muted);
+}
+.gb-v-item[data-status="playing"] .gb-v-dot { border-color: var(--warn); color: var(--warn); }
+.gb-v-item[data-status="dropped"] .gb-v-dot { border-color: var(--danger); color: var(--danger); }
+.gb-v-item[data-status="done"] .gb-v-dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+.gb-v-text { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.gb-v-text strong { font-weight: 600; overflow-wrap: anywhere; }
+.gb-v-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.gb-v-chev { transform: rotate(180deg); color: var(--muted); flex: none; }
+.gb-v-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gb-v-actions .btn { gap: 6px; }
+.gb-v-actions .btn .gb-d-ico { width: 16px; height: 16px; }
+.gb-v-link { display: grid; gap: 8px; }
+.gb-v-hit {
+  width: 100%; min-height: var(--tap); display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 8px 12px; text-align: left; cursor: pointer; font: inherit; color: var(--text);
+  background: none; border: 1px solid var(--border); border-radius: 10px;
+}
+.gb-form-hint { margin: 0 0 12px; }
+@media (hover: hover) {
+  .gb-v-item:hover, .gb-v-hit:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+}

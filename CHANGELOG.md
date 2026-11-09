@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0
+
+- Games die onder een andere titel op meerdere platforms zijn uitgekomen, krijgen nu per titel en platform een eigen kaart, met een eigen status. Zo staan bijvoorbeeld *Castlevania: Rondo of Blood* (PCE), *Castlevania - Dracula X* (SNES) en *Castlevania - The Dracula X Chronicles* (PSP) los in de lijst.
+- De games uit je oorspronkelijke lijst die als "Titel A / Titel B" waren ingevoerd, zijn automatisch gesplitst (10 games worden er 21). Je status, beoordeling en notities gaan naar de versie waarvan het platform bij "Gespeeld op" staat, en anders naar de eerste versie. Games die je zelf met een "/" hebt toegevoegd, blijven zoals ze zijn.
+- Op de kaart zie je met een paars labeltje met een schakelicoon dat er andere versies zijn, bijvoorbeeld "ook op PSP, SNES". Op de boxart-muur staat rechtsboven een paars rondje met hetzelfde icoon.
+- In het detailscherm staat een nieuw blok **Andere versies**. Tik op een versie om daarheen te gaan. Met **Versie toevoegen** maak je een nieuwe, gekoppelde kaart. Met **Koppel bestaande game** koppel je een game die al in je lijst staat. Met **Loskoppelen** haal je de koppeling weg; de kaarten zelf blijven bestaan.
+- Een apparaat met een oudere versie vraagt eerst om bij te werken voordat je daar weer kunt bewerken.
+
 ## 1.13.1
 
 - Op iPad en laptop maakt een game met een lange titel de andere kaarten in dezelfde rij niet meer extra hoog. Elke kaart is nu zo hoog als hij zelf nodig heeft.
