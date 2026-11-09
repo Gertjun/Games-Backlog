@@ -11,6 +11,9 @@
 // Schema 2: `years` toegevoegd (jaar/jaren van release). Jaar en platform
 // tussen haakjes in de titel, zoals "(1985, NES)", worden labels.
 // Schema 3: collectie `gameInfo` toegevoegd (Metascore in de lijst).
+// 1.6.0: games zonder jaarlabel krijgen het releasejaar uit gameInfo.
+//   Optioneel veld `noAutoYear: true` = jaar zelf weggehaald, niet aanvullen.
+//   Geen schemawijziging: oudere versies laten het veld gewoon staan.
 
 import { h, today } from './core/dom.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
@@ -181,8 +184,42 @@ export const app = {
     watchLock(root);
     detail?.refresh();
     startEnrich(ctx, SCHEMA);
+    setTimeout(() => fillMissingYears(ctx), 0); // niet midden in het tekenen opslaan
   },
 };
+
+/* ---------- Jaartal aanvullen uit de opgehaalde game-info ---------- */
+
+// Games zonder jaarlabel krijgen het eerste releasejaar dat bij het ophalen
+// van de scores en boxart is gevonden (Wikipedia/Wikidata). Alleen als die
+// informatie bij de huidige titel hoort, en niet als je het jaar zelf hebt
+// weggehaald (noAutoYear).
+function missingYears(d) {
+  const infos = new Map(alive(d.gameInfo || []).map((r) => [r.id, r]));
+  return alive(d.games || []).flatMap((g) => {
+    if (g.years?.length || g.noAutoYear) return [];
+    const info = infos.get(g.id);
+    if (!info?.found || !(info.pinned || info.query === g.title)) return [];
+    const year = info.release?.year;
+    return isYear(year) ? [[g.id, year]] : [];
+  });
+}
+
+let fillingYears = false;
+async function fillMissingYears(ctx) {
+  const data = ctx.data;
+  if (fillingYears || !data || (data.schema || 0) > SCHEMA || !missingYears(data).length) return;
+  fillingYears = true;
+  try {
+    await ctx.update((d) => {
+      for (const [id, year] of missingYears(d)) updateById(d.games, id, { years: [year] });
+    });
+  } catch {
+    // Bijvoorbeeld net vergrendeld: volgende keer opnieuw
+  } finally {
+    fillingYears = false;
+  }
+}
 
 /* ---------- Onderdelen ---------- */
 
@@ -414,6 +451,8 @@ function openEditor(ctx, id) {
       notes: v.notes.trim(),
     };
     if (!data.title) return;
+    // Jaar zelf weggehaald? Dan niet automatisch opnieuw aanvullen.
+    if (id) data.noAutoYear = !data.years.length && (Boolean(g.years?.length) || Boolean(g.noAutoYear));
     await ctx.update((d) => {
       if (id) updateById(d.games, id, data);
       else d.games.push(newRecord(data));

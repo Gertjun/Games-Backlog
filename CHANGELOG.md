@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0
+
+- Nieuw: elke game krijgt nu een jaarlabel, ook de moderne games. Heeft een game nog geen jaar, dan neemt de app het eerste releasejaar over uit de informatie die al bij de scores en boxart is opgehaald (Wikipedia/Wikidata). Nieuwe games krijgen hun jaar vanzelf zodra die informatie binnen is.
+- Een jaar dat je zelf hebt ingevuld blijft altijd staan. Haal je het jaar bij het bewerken weg, dan blijft het ook leeg en wordt het niet opnieuw aangevuld.
+- Klopt een jaar niet (bijvoorbeeld het jaar van het origineel bij een remake)? Pas het aan via Bewerken.
+
 ## 1.5.0
 
 - Nieuw: de Metascore staat nu als gekleurd blokje rechts in elke rij van de lijst (groen 75+, geel 50–74, rood daaronder). Heeft een oudere game geen Metascore, dan zie je de GameRankings-score als omlijnd blokje.
