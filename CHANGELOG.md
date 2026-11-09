@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.14.1
+
+- Op iPad en laptop zijn alle kaarten nu precies even hoog, zodat de rijen netjes uitlijnen. Er is altijd ruimte voor twee regels titel en één regel labels. Een korte titel staat in het midden van de kaart.
+- Vaste afspraken als iets niet op de kaart past:
+  - **Titel**: maximaal twee regels, daarna "…". De volledige titel zie je in het detailscherm (en op de laptop als je er met de muis op wijst).
+  - **Labels**: altijd één regel. Status (Bezig, Gestopt), platform en jaar staan er altijd op.
+  - **"ook op …"** wordt ingekort met "…" als de ruimte krap is; het schakelicoon blijft altijd zichtbaar.
+  - **Sterren, datum en notities** verschijnen alleen als ze er helemaal op passen. Je ziet nooit een half label.
+- Deze labelregels gelden ook in de lijst op de iPhone.
+
 ## 1.14.0
 
 - Games die onder een andere titel op meerdere platforms zijn uitgekomen, krijgen nu per titel en platform een eigen kaart, met een eigen status. Zo staan bijvoorbeeld *Castlevania: Rondo of Blood* (PCE), *Castlevania - Dracula X* (SNES) en *Castlevania - The Dracula X Chronicles* (PSP) los in de lijst.

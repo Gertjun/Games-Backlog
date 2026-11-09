@@ -369,14 +369,21 @@ function renderList(el, all, ctx) {
 
 function gameRow(g, ctx) {
   const st = STATUS[g.status] || STATUS.backlog;
+  // Labels staan altijd op één regel, in volgorde van belang (zie .gb-meta in app.css):
+  // 1. status, platform, jaar: altijd zichtbaar;
+  // 2. "ook op …": wordt ingekort met "…" als de ruimte krap is (het icoon blijft);
+  // 3. sterren, datum, notities: alleen als ze er helemaal op passen, anders weg.
+  const extra = [
+    g.rating ? h('span', { class: 'gb-stars', 'aria-label': `${g.rating} sterren` }, '★'.repeat(g.rating)) : null,
+    g.status === 'done' && g.finished ? h('span', { class: 'gb-date' }, formatDate(g.finished)) : null,
+    g.notes ? h('span', { class: 'gb-tag', title: 'Heeft notities', 'aria-label': 'Heeft notities' }, '📝') : null,
+  ].filter(Boolean);
   const meta = [
     g.status === 'playing' || g.status === 'dropped' ? h('span', { class: `gb-tag gb-tag-${g.status}` }, st.label) : null,
     ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
     ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year', 'aria-label': `Uit ${y}` }, String(y))),
-    g.rating ? h('span', { class: 'gb-stars', 'aria-label': `${g.rating} sterren` }, '★'.repeat(g.rating)) : null,
-    g.status === 'done' && g.finished ? h('span', { class: 'gb-date' }, formatDate(g.finished)) : null,
-    g.notes ? h('span', { class: 'gb-tag', title: 'Heeft notities', 'aria-label': 'Heeft notities' }, '📝') : null,
     versionsTag(g),
+    extra.length ? h('span', { class: 'gb-meta-extra' }, extra) : null,
   ];
   return h('li', { class: 'gb-game', dataset: { status: g.status } },
     h('button', {
@@ -406,7 +413,7 @@ function versionsTag(g) {
   const others = otherPlatforms(g);
   const text = others.length ? `ook op ${others.join(', ')}` : `+${rel.length} ${rel.length === 1 ? 'versie' : 'versies'}`;
   const label = `Ook verschenen als ${rel.map((o) => `${o.title}${o.platforms?.length ? ` (${o.platforms.join(', ')})` : ''}`).join(', ')}`;
-  return h('span', { class: 'gb-tag gb-tag-alt', title: label, 'aria-label': label }, icon(ICON.link, 'gb-link-ico'), text);
+  return h('span', { class: 'gb-tag gb-tag-alt', title: label, 'aria-label': label }, icon(ICON.link, 'gb-link-ico'), h('span', { class: 'gb-tag-alt-text' }, text));
 }
 
 /** Metascore, of anders GameRankings (oudere retro-games). */
