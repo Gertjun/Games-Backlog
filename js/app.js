@@ -355,7 +355,9 @@ function filterGames(list, f) {
     && (!q || [g.title, g.group, ...(g.platforms || []), ...(g.years || []), g.playedOn, g.notes].join(' ').toLowerCase().includes(q)));
 }
 
-function sortGames(list) {
+// inGroup: binnen één serie geldt bij 'Lijstvolgorde' gewoon de volgorde van
+// je lijst, zonder modern eerst (anders staat bijvoorbeeld FF XVI vóór FF I).
+function sortGames(list, inGroup = false) {
   const byTitle = (a, b) => collator.compare(a.title, b.title);
   const copy = [...list];
   if (view.sort === 'title') return copy.sort(byTitle);
@@ -372,6 +374,7 @@ function sortGames(list) {
   }
   if (view.sort === 'rating') return copy.sort((a, b) => (b.rating || 0) - (a.rating || 0) || byTitle(a, b));
   // Lijstvolgorde: modern eerst, verder de volgorde waarin ze zijn toegevoegd
+  if (inGroup) return copy;
   return copy.sort((a, b) => (a.section === 'modern' ? 0 : 1) - (b.section === 'modern' ? 0 : 1));
 }
 
@@ -391,19 +394,25 @@ function renderList(el, all, ctx) {
     el.replaceChildren(h('ul', { class: 'card gb-games' }, sortGames(filtered).map((g) => gameRow(g, ctx))));
     return;
   }
-  // De series houden altijd hun vaste volgorde (modern eerst, dan de lijst);
-  // de gekozen sortering geldt binnen elke serie.
+  // Eén kop per serie, ongeacht Modern of Retro: Final Fantasy staat dus één
+  // keer in de lijst, met de oude én de nieuwe delen. Volgorde van de series:
+  // eerst series met alleen moderne games, daarna de rest in lijstvolgorde
+  // (een serie komt op de plek van zijn eerste game in je lijst).
+  // De gekozen sortering geldt binnen elke serie.
   const groups = new Map();
-  for (const g of filtered.slice().sort((a, b) => (a.section === 'modern' ? 0 : 1) - (b.section === 'modern' ? 0 : 1))) {
-    const key = `${SECTION[g.section] || 'Overig'} · ${g.group || 'Overig'}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(g);
-  }
-  el.replaceChildren(...[...groups].map(([name, items]) => h('section', { class: 'gb-group' },
+  filtered.forEach((g, i) => {
+    const key = g.group || 'Overig';
+    if (!groups.has(key)) groups.set(key, { items: [], first: i, allModern: true });
+    const grp = groups.get(key);
+    grp.items.push(g);
+    if (g.section !== 'modern') grp.allModern = false;
+  });
+  const ordered = [...groups].sort(([, a], [, b]) => (a.allModern ? 0 : 1) - (b.allModern ? 0 : 1) || a.first - b.first);
+  el.replaceChildren(...ordered.map(([name, { items }]) => h('section', { class: 'gb-group' },
     h('h2', { class: 'gb-group-head' },
       h('span', {}, name),
       h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
-    h('ul', { class: 'card gb-games' }, sortGames(items).map((g) => gameRow(g, ctx))))));
+    h('ul', { class: 'card gb-games' }, sortGames(items, true).map((g) => gameRow(g, ctx))))));
 }
 
 function gameRow(g, ctx) {
@@ -616,7 +625,7 @@ function openPicker(ctx, all) {
           class: 'gb-score gb-pick-score', dataset: { level: scoreLevel(sc.score), source: sc.source },
           'aria-label': scoreLabel(sc),
         }, String(sc.score)) : null),
-      g.group ? h('p', { class: 'gb-pick-group' }, `${SECTION[g.section] || ''} · ${g.group}`) : null);
+      g.group ? h('p', { class: 'gb-pick-group' }, g.group) : null);
   };
 
   function roll() {

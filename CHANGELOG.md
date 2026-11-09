@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.19.0
+
+- **Eén kop per serie:** in de weergave *Per serie* staat elke serie nu maar één keer, ook als er moderne én retro games in zitten. *Final Fantasy* is dus één groep van deel I tot en met XVI, in de volgorde van je lijst. Voorheen stonden er twee groepen: "Modern · Final Fantasy" en "Retro · Final Fantasy".
+- De koppen tonen alleen nog de naam van de serie, zonder "Modern ·" of "Retro ·" ervoor. Bovenaan staan de series met alleen moderne games (zoals PlayStation 5), daarna de rest in de volgorde van je lijst.
+- Het filter **Categorie** (Modern of Retro) werkt nog zoals voorheen. Kies je Retro, dan zie je bij Final Fantasy alleen de oude delen.
+- Je gegevens zijn niet veranderd.
+
 ## 1.18.0
 
 - **Zelf de juiste Wikipedia-pagina kiezen:** onder "Niet de juiste game?" staat nu een veld waarin je een Wikipedia-link plakt (bijvoorbeeld van *Assassin's Creed Shadows*) of de titel typt. Een link of exacte titel wordt meteen gebruikt en vastgezet; met een andere zoekterm krijg je een nieuwe lijst om uit te kiezen. Links naar de Nederlandse Wikipedia werken ook.
