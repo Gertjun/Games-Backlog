@@ -30,7 +30,7 @@ import { renderCheck, countIssues, resetCheckSession, parseScore } from './check
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 6;
+const SCHEMA = 7;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -42,6 +42,8 @@ const STATUS = {
 // Tikken op het rondje: Backlog → Bezig → Uitgespeeld → Backlog
 const NEXT = { backlog: 'playing', playing: 'done', done: 'backlog', dropped: 'backlog' };
 const SECTION = { modern: 'Modern', retro: 'Retro' };
+// Games die niet bij een serie horen, staan samen in deze groep (altijd onderaan).
+const NO_SERIES = 'Overig';
 
 // Filters gelden alleen voor deze sessie (niet opgeslagen buiten de kluis).
 // grouped: per serie tonen of als één lijst; sort geldt binnen elke serie.
@@ -149,6 +151,14 @@ export const app = {
     // bevestigd als "klopt").
     // Niets om om te zetten; het schemanummer zorgt dat een apparaat met een
     // oudere versie eerst om bijwerken vraagt, zodat het veld niet verloren gaat.
+    // Schema 7: "PlayStation 5" is een console, geen serie. Die games gaan
+    // naar de groep Overig (games zonder serie). Hun categorie Modern blijft.
+    if ((data.schema || 0) < 7) {
+      const now = Date.now();
+      for (const g of data.games) {
+        if (!g.deleted && g.group === 'PlayStation 5') Object.assign(g, { group: NO_SERIES, updatedAt: now });
+      }
+    }
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -230,7 +240,7 @@ export const app = {
       group('filter', 'Filter', chipsEl, h('div', { class: 'gb-ctl-fields' },
         statusMenu,
         menu('section', 'Categorie', () => [['', 'Alle systemen'], ['modern', 'Modern'], ['retro', 'Retro']], countFor('section')),
-        menu('group', 'Serie', () => [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])], countFor('group')),
+        menu('group', 'Serie', () => [['', 'Alle series'], ...uniq(all.map((g) => g.group?.trim() || NO_SERIES)).map((v) => [v, v])], countFor('group')),
         menu('platform', 'Platform', () => [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])], countFor('platform')),
         menu('year', 'Jaar van release', () => [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])], countFor('year')))),
       group('view', 'Weergave',
@@ -349,7 +359,7 @@ function filterGames(list, f) {
   return list.filter((g) =>
     (!f.status || g.status === f.status)
     && (!f.section || g.section === f.section)
-    && (!f.group || g.group === f.group)
+    && (!f.group || (g.group?.trim() || NO_SERIES) === f.group)
     && (!f.platform || (g.platforms || []).includes(f.platform))
     && (!f.year || (g.years || []).includes(Number(f.year)))
     && (!q || [g.title, g.group, ...(g.platforms || []), ...(g.years || []), g.playedOn, g.notes].join(' ').toLowerCase().includes(q)));
@@ -395,19 +405,17 @@ function renderList(el, all, ctx) {
     return;
   }
   // Eén kop per serie, ongeacht Modern of Retro: Final Fantasy staat dus één
-  // keer in de lijst, met de oude én de nieuwe delen. Volgorde van de series:
-  // eerst series met alleen moderne games, daarna de rest in lijstvolgorde
-  // (een serie komt op de plek van zijn eerste game in je lijst).
+  // keer in de lijst, met de oude én de nieuwe delen. De series staan in de
+  // volgorde van je lijst (een serie komt op de plek van zijn eerste game);
+  // Overig, de games zonder serie, staat altijd onderaan.
   // De gekozen sortering geldt binnen elke serie.
   const groups = new Map();
   filtered.forEach((g, i) => {
-    const key = g.group || 'Overig';
-    if (!groups.has(key)) groups.set(key, { items: [], first: i, allModern: true });
-    const grp = groups.get(key);
-    grp.items.push(g);
-    if (g.section !== 'modern') grp.allModern = false;
+    const key = g.group?.trim() || NO_SERIES;
+    if (!groups.has(key)) groups.set(key, { items: [], first: i });
+    groups.get(key).items.push(g);
   });
-  const ordered = [...groups].sort(([, a], [, b]) => (a.allModern ? 0 : 1) - (b.allModern ? 0 : 1) || a.first - b.first);
+  const ordered = [...groups].sort(([ka, a], [kb, b]) => (ka === NO_SERIES) - (kb === NO_SERIES) || a.first - b.first);
   el.replaceChildren(...ordered.map(([name, { items }]) => h('section', { class: 'gb-group' },
     h('h2', { class: 'gb-group-head' },
       h('span', {}, name),
@@ -699,7 +707,7 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
     h('div', { class: 'field-row' },
       field('Categorie', h('select', { name: 'section' },
         Object.entries(SECTION).map(([v, t]) => h('option', { value: v, selected: g.section === v }, t)))),
-      field('Serie / groep', h('input', { name: 'group', type: 'text', value: g.group || '', list: 'gb-groups', autocomplete: 'off', placeholder: 'bv. Zelda' }))),
+      field('Serie / groep', h('input', { name: 'group', type: 'text', value: g.group || '', list: 'gb-groups', autocomplete: 'off', placeholder: 'bv. Zelda, of leeg voor Overig' }))),
     field('Platforms (komma-gescheiden)', h('input', {
       name: 'platforms', type: 'text', value: (g.platforms || []).join(', '), list: 'gb-platforms', autocomplete: 'off', placeholder: 'bv. SNES, GBA',
     })),

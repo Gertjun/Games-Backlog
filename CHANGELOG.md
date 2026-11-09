@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.20.0
+
+- **Geen serie "PlayStation 5" meer:** PlayStation 5 is een console, geen serie. Die games staan nu onder **Overig**, samen met de andere losse games die niet bij een serie horen. Ze blijven wel Modern, dus met het filter Categorie → Modern zie je ze nog apart.
+- **Overig staat altijd onderaan** in de weergave *Per serie*. De echte series staan erboven, in de volgorde van je lijst.
+- Laat je bij Bewerken het veld *Serie / groep* leeg, dan komt de game ook onder Overig.
+- Een apparaat met een oudere versie vraagt eerst om bij te werken voordat je daar weer kunt bewerken.
+
 ## 1.19.0
 
 - **Eén kop per serie:** in de weergave *Per serie* staat elke serie nu maar één keer, ook als er moderne én retro games in zitten. *Final Fantasy* is dus één groep van deel I tot en met XVI, in de volgorde van je lijst. Voorheen stonden er twee groepen: "Modern · Final Fantasy" en "Retro · Final Fantasy".
