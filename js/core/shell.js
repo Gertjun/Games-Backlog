@@ -474,15 +474,26 @@ function scheduleSync() {
 function wireAppBar() {
   $('#btn-sync').addEventListener('click', () => runSync({ quiet: false }));
   $('#btn-lock').addEventListener('click', lockNow);
-  $('#btn-settings').addEventListener('click', () => openSettings());
+  // Elke knop met data-open-settings opent de instellingen (tandwiel in de
+  // balk, of een knop in de navigatie van de app).
+  document.querySelectorAll('[data-open-settings]').forEach((b) => b.addEventListener('click', () => openSettings()));
 }
 
 // ---------- Instellingen ----------
 
+// Instellingen als venster (standaard) of als scherm in de app
+// (<dialog id="dlg-settings" data-mode="page">). Als scherm opent het zonder
+// achtergrond en meldt het zich met het event "settings:open", zodat de
+// navigatie van de app kan wisselen. Sluiten gaat via dlg.close().
+const settingsAsPage = () => $('#dlg-settings').dataset.mode === 'page';
+
 function openSettings(section) {
   fillSettings();
   const dlg = $('#dlg-settings');
-  if (!dlg.open) dlg.showModal();
+  if (settingsAsPage()) {
+    if (!dlg.open) dlg.show();
+    document.dispatchEvent(new CustomEvent('settings:open', { detail: { section } }));
+  } else if (!dlg.open) dlg.showModal();
   if (section) $(`#settings-${section}`)?.scrollIntoView({ block: 'start' });
 }
 
@@ -532,7 +543,7 @@ async function checkForUpdate(button) {
 function wireSettings() {
   const dlg = $('#dlg-settings');
   $('#btn-close-settings').addEventListener('click', () => dlg.close());
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('click', (e) => { if (e.target === dlg && !settingsAsPage()) dlg.close(); });
 
   // GitHub-sync
   const ghForm = $('#form-github');

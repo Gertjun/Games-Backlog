@@ -25,10 +25,12 @@ import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
 import { findCandidates, findPage, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
 import { applyCorrections } from './corrections.js';
+import { currentScreen, onScreenChange, setCheckCount } from './nav.js';
+import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 5;
+const SCHEMA = 6;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -142,6 +144,11 @@ export const app = {
     splitSeedVersions(data.games, (t) => splitTitle(t, known));
     // Schema 5: eenmalige verbeteringen aan titels, jaren en platforms (zie corrections.js)
     if ((data.schema || 0) < 5) applyCorrections(data);
+    // Schema 6: nieuwe, optionele velden per game: myScore (eigen score, 1–100)
+    // en confirmedPage (pageid van de Wikipedia-pagina die je op Controle hebt
+    // bevestigd als "klopt").
+    // Niets om om te zetten; het schemanummer zorgt dat een apparaat met een
+    // oudere versie eerst om bijwerken vraagt, zodat het veld niet verloren gaat.
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -160,6 +167,24 @@ export const app = {
     const all = alive(ctx.data.games);
     infoById = new Map(alive(ctx.data.gameInfo).map((r) => [r.id, r]));
     relatedById = relatedIndex(all);
+    last = { root, ctx };
+    setCheckCount(countIssues(all, infoById));
+    if (currentScreen() === 'check') {
+      renderCheck(root, {
+        all: all.slice().sort((a, b) => collator.compare(a.title, b.title)),
+        infoById, ctx,
+        tags: (g) => [
+          ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
+          ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year' }, String(y))),
+        ],
+        scoreBadge: (g) => scoreBadge(infoById.get(g.id), g),
+        openDetail: (id, opts) => openDetail(ctx, id, opts),
+        platforms: uniq([...BASE_PLATFORMS, ...all.flatMap((g) => g.platforms || [])]),
+        enrichNote: enrichLine(),
+      });
+      afterRender(root, ctx);
+      return;
+    }
     const listEl = h('div', { class: 'gb-list' });
     const chipsEl = h('div', { class: 'gb-chips', role: 'tablist', 'aria-label': 'Status' });
 
@@ -229,12 +254,23 @@ export const app = {
       h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), pickBtn, search, controls),
       listEl), addBtn);
     refresh();
-    watchLock(root);
-    detail?.refresh();
-    startEnrich(ctx, SCHEMA);
-    setTimeout(() => fillMissingYears(ctx), 0); // niet midden in het tekenen opslaan
+    afterRender(root, ctx);
   },
 };
+
+// Laatst getekende root en ctx, om bij het wisselen van scherm opnieuw te tekenen.
+let last = null;
+onScreenChange((screen) => {
+  if (screen !== 'check') resetCheckSession();
+  if (last) app.render(last.root, last.ctx);
+});
+
+function afterRender(root, ctx) {
+  watchLock(root);
+  detail?.refresh();
+  startEnrich(ctx, SCHEMA);
+  setTimeout(() => fillMissingYears(ctx), 0); // niet midden in het tekenen opslaan
+}
 
 /* ---------- Jaartal aanvullen uit de opgehaalde game-info ---------- */
 
@@ -331,7 +367,7 @@ function sortGames(list) {
   if (view.sort === 'recent') return copy.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   if (view.sort === 'score') {
     // Hoogste score eerst, games zonder score onderaan
-    const sc = (g) => mainScore(infoById.get(g.id))?.score ?? -1;
+    const sc = (g) => mainScore(infoById.get(g.id), g)?.score ?? -1;
     return copy.sort((a, b) => sc(b) - sc(a) || byTitle(a, b));
   }
   if (view.sort === 'rating') return copy.sort((a, b) => (b.rating || 0) - (a.rating || 0) || byTitle(a, b));
@@ -401,7 +437,7 @@ function gameRow(g, ctx) {
     },
       h('span', { class: 'gb-title', title: g.title }, g.title),
       h('span', { class: 'gb-meta' }, meta)),
-    scoreBadge(infoById.get(g.id)));
+    scoreBadge(infoById.get(g.id), g));
 }
 
 /** Andere platforms waarop deze game (onder een andere titel) bestaat. */
@@ -419,18 +455,25 @@ function versionsTag(g) {
   return h('span', { class: 'gb-tag gb-tag-alt', title: label, 'aria-label': label }, icon(ICON.link, 'gb-link-ico'), h('span', { class: 'gb-tag-alt-text' }, text));
 }
 
-/** Metascore, of anders GameRankings (oudere retro-games). */
-function mainScore(info) {
+/**
+ * De score op de kaart: je eigen score (zelf ingevuld, bijvoorbeeld van
+ * Metacritic), anders de Metascore, anders GameRankings (oudere retro-games).
+ */
+function mainScore(info, g) {
+  if (g?.myScore) return { score: g.myScore, source: 'own' };
   if (!info?.found) return null;
   if (info.metacritic?.[0]) return { score: info.metacritic[0].score, source: 'mc' };
   if (info.gamerankings?.[0]) return { score: info.gamerankings[0].score, source: 'gr' };
   return null;
 }
 
-function scoreBadge(info) {
-  const sc = mainScore(info);
+/** "Metascore 85", "GameRankings 85%" of "Eigen score 85". */
+const scoreLabel = (sc) => ({ own: 'Eigen score ', mc: 'Metascore ' }[sc.source] ?? 'GameRankings ') + sc.score + (sc.source === 'gr' ? '%' : '');
+
+function scoreBadge(info, g) {
+  const sc = mainScore(info, g);
   if (!sc) return null;
-  const label = sc.source === 'mc' ? `Metascore ${sc.score}` : `GameRankings ${sc.score}%`;
+  const label = scoreLabel(sc);
   return h('span', {
     class: 'gb-score', title: label, 'aria-label': label,
     dataset: { level: scoreLevel(sc.score), source: sc.source },
@@ -485,7 +528,7 @@ function coverArt(g, src, { cls = '', lazy = true } = {}) {
 function wallTile(g, ctx) {
   const info = infoById.get(g.id);
   const st = STATUS[g.status] || STATUS.backlog;
-  const sc = mainScore(info);
+  const sc = mainScore(info, g);
   const others = relatedById.has(g.id) ? otherPlatforms(g) : [];
   const label = [g.title, st.label, ...(g.platforms || []), sc ? `score ${sc.score}` : '',
     relatedById.has(g.id) ? `ook verschenen${others.length ? ` op ${others.join(', ')}` : ' in andere versies'}` : ''].filter(Boolean).join(', ');
@@ -561,7 +604,7 @@ function openPicker(ctx, all) {
 
   const drawResult = (g) => {
     const info = infoById.get(g.id);
-    const sc = mainScore(info);
+    const sc = mainScore(info, g);
     stage.classList.remove('is-spinning');
     stage.replaceChildren(
       coverArt(g, info?.found ? info.image : '', { cls: 'gb-pick-cover', lazy: false }),
@@ -571,7 +614,7 @@ function openPicker(ctx, all) {
         ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year' }, String(y))),
         sc ? h('span', {
           class: 'gb-score gb-pick-score', dataset: { level: scoreLevel(sc.score), source: sc.source },
-          'aria-label': sc.source === 'mc' ? `Metascore ${sc.score}` : `GameRankings ${sc.score}%`,
+          'aria-label': scoreLabel(sc),
         }, String(sc.score)) : null),
       g.group ? h('p', { class: 'gb-pick-group' }, `${SECTION[g.section] || ''} · ${g.group}`) : null);
   };
@@ -654,6 +697,10 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
     field('Jaar van release (komma-gescheiden)', h('input', {
       name: 'years', type: 'text', value: (g.years || []).join(', '), autocomplete: 'off', placeholder: 'bv. 1991, 2002',
     })),
+    field('Eigen score (optioneel, 1–100)', h('input', {
+      name: 'myScore', type: 'number', inputmode: 'numeric', min: 1, max: 100, step: 1,
+      value: g.myScore || '', placeholder: 'bv. de Metascore van jouw versie',
+    })),
     field('Status', h('select', { name: 'status' },
       Object.entries(STATUS).map(([v, s]) => h('option', { value: v, selected: g.status === v }, s.label)))),
     h('div', { class: 'field-row' },
@@ -698,6 +745,7 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
       finished: v.finished || (v.status === 'done' ? (g.finished || today()) : ''),
       rating,
       notes: v.notes.trim(),
+      myScore: parseScore(v.myScore),
     };
     if (!data.title) return;
     // Jaar zelf weggehaald? Dan niet automatisch opnieuw aanvullen.
@@ -774,7 +822,7 @@ const ICON = {
 /** Metacritic-kleuren: groen 75+, geel 50–74, rood daaronder. */
 const scoreLevel = (n) => (n >= 75 ? 'good' : n >= 50 ? 'mixed' : 'bad');
 
-function openDetail(ctx, id) {
+function openDetail(ctx, id, opts = {}) {
   if (!findById(ctx.data.games, id)) return;
   detail?.close();
 
@@ -883,6 +931,10 @@ function openDetail(ctx, id) {
   document.body.append(dlg);
   dlg.showModal();
   load();
+  // Vanaf Controle: meteen de andere zoekresultaten tonen
+  if (opts.picker) {
+    openPicker().then(() => dlg.querySelector('.gb-d-more')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  }
 }
 
 function coverImage(src, alt, cls) {
@@ -925,9 +977,21 @@ function detailHero(g, s, img) {
   ];
 }
 
-function scoreCard(s) {
-  const head = h('h2', { class: 'gb-d-label' }, 'Metascore');
+function scoreCard(s, g) {
   const core = s.core;
+  if (g.myScore) {
+    // Zelf ingevuld: die gaat voor. De opgehaalde score staat er klein onder.
+    const fetched = mainScore(core?.found === false ? null : { found: true, ...core });
+    return h('section', { class: 'card gb-d-tile' },
+      h('h2', { class: 'gb-d-label' }, 'Eigen score'),
+      h('div', { class: 'gb-d-score', dataset: { level: scoreLevel(g.myScore), source: 'own' }, 'aria-label': `${g.myScore} van de 100` }, String(g.myScore)),
+      h('p', { class: 'gb-d-note' }, 'Zelf ingevuld'),
+      fetched ? h('ul', { class: 'gb-d-subscores' }, h('li', {},
+        h('span', {}, `${fetched.source === 'mc' ? 'Metascore' : 'GameRankings'} (Wikipedia)`),
+        h('strong', { dataset: { level: scoreLevel(fetched.score) } }, String(fetched.score))))
+        : null);
+  }
+  const head = h('h2', { class: 'gb-d-label' }, 'Metascore');
   if (s.loading && !core) {
     return h('section', { class: 'card gb-d-tile' }, head, h('div', { class: 'gb-d-score gb-skel' }), h('p', { class: 'gb-skel gb-skel-line' }));
   }
@@ -1038,7 +1102,7 @@ function versionsSection(g, s, ctx, redraw) {
 }
 
 function detailBody(g, s, { ctx, load, redraw, openPicker }) {
-  const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s), progressCard(g, ctx)), versionsSection(g, s, ctx, redraw)];
+  const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s, g), progressCard(g, ctx)), versionsSection(g, s, ctx, redraw)];
   const core = s.core;
   const skeleton = (label) => h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': label },
     h('p', { class: 'gb-skel gb-skel-line' }), h('p', { class: 'gb-skel gb-skel-line' }),

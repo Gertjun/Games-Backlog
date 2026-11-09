@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.16.0
+
+- **Nieuwe indeling met drie schermen: Overzicht, Controle en Instellingen.** Op de laptop en iPad (liggend) kies je ze in een smalle balk links. Op de iPhone en iPad (staand) staan ze in een tabbalk onderin. Het tandwiel rechtsboven is weg.
+- **Overzicht** is het vertrouwde scherm met al je games.
+- **Controle** toont de games waarvan informatie mist of onduidelijk is:
+  - **Geen score**: er is geen Metascore of GameRankings-score gevonden.
+  - **Mogelijk andere versie**: de score en boxart komen van een Wikipedia-pagina met een andere titel, of met een releasejaar dat meer dan een jaar afwijkt. Bijvoorbeeld "Horizon Zero Dawn" (2017) bij de Remastered uit 2024.
+  - **Geen jaar of platform** en **geen boxart**.
+  - Het getal op de Controle-knop laat zien hoeveel games er op de lijst staan. Met de knoppen bovenaan kies je één soort probleem.
+- Op Controle pas je alles direct aan. Je kunt een **eigen score** invullen, bijvoorbeeld die van Metacritic, en een jaar of platform. Met **Andere pagina kiezen** open je het detailscherm met de zoekresultaten. Met **Deze pagina klopt** bevestig je dat de gevonden pagina goed is. Een opgeloste game krijgt "Opgelost" en verdwijnt van de lijst als je het scherm verlaat.
+- **Eigen score**: kun je ook invullen bij Bewerken. Die gaat voor de opgehaalde score. Op de kaart herken je hem aan een paarse ring. In het detailscherm staat de score van Wikipedia er klein onder. Sorteren op score gebruikt ook je eigen score.
+- **Instellingen** is nu een eigen scherm in plaats van een los venster, met dezelfde onderdelen als voorheen.
+- Een apparaat met een oudere versie vraagt eerst om bij te werken voordat je daar weer kunt bewerken.
+
 ## 1.15.0
 
 Verbeteringen in de lijst, eenmalig doorgevoerd bij het openen van de app. Games die je zelf al had aangepast, blijven zoals ze zijn. Je status, sterren en notities blijven bij alle games staan.
