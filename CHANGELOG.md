@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.23.1
+
+- **Hele serie toevoegen is duidelijker:** bij het zoeken zie je nu alleen nog echte series. Losse games, personages en "universe"-pagina's staan er niet meer tussen. Daardoor leek het eerste scherm al de keuzelijst, maar daar stonden nog geen platformlabels.
+- Vindt de app precies één serie (zoals bij *Professor Layton*), dan ga je meteen door naar de lijst met games om aan te vinken, met de platformlabels erbij.
+- Zijn er meer series (bijvoorbeeld bij *Mario*), dan tik je eerst de juiste serie aan. Met **Terug** kom je weer bij de zoekresultaten.
+
 ## 1.23.0
 
 - **Nieuwe weergave: Per platform.** Kies bij Weergave voor *Per platform* en je ziet je games gegroepeerd per console, met het icoontje en de kleur van dat platform in de kop.

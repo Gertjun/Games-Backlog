@@ -42,7 +42,9 @@ export function openSeriesImport(ctx, { onDone } = {}) {
   showSearch();
 
   /* ---------- Stap 1: serie zoeken ---------- */
-  function showSearch(initial = '') {
+  // autoOpen: bij precies één gevonden serie meteen de games tonen. Niet als je
+  // via Terug komt, anders spring je direct weer vooruit.
+  function showSearch(initial = '', autoOpen = true) {
     title.textContent = 'Serie toevoegen';
     const input = h('input', {
       type: 'search', name: 'q', value: initial, required: true, autocomplete: 'off', enterkeyhint: 'search',
@@ -58,14 +60,19 @@ export function openSeriesImport(ctx, { onDone } = {}) {
       const signal = abort();
       results.replaceChildren(h('p', { class: 'muted' }, 'Zoeken…'));
       try {
-        const list = await searchSeries(q, signal);
+        const { results: list, onlySeries } = await searchSeries(q, signal);
         if (signal.aborted) return;
-        results.replaceChildren(list.length
+        if (autoOpen && onlySeries && list.length === 1) { showGames(list[0], q); return; }
+        autoOpen = true;
+        const hint = list.length ? h('p', { class: 'muted gb-series-hint' }, onlySeries
+          ? 'Tik op een serie om de games te zien en te kiezen.'
+          : 'Geen serie gevonden met die naam. Deze resultaten komen het dichtst in de buurt.') : null;
+        results.replaceChildren(...[hint, list.length
           ? h('ul', { class: 'card gb-series-list' }, list.map((r) => h('li', {},
             h('button', { type: 'button', class: 'gb-series-pick', onClick: () => showGames(r, q) },
               h('span', { class: 'gb-series-name' }, r.label),
               r.description ? h('span', { class: 'gb-series-desc muted' }, r.description) : null))))
-          : h('p', { class: 'muted' }, `Niets gevonden voor "${q}". Probeer de Engelse naam van de serie.`));
+          : h('p', { class: 'muted' }, `Niets gevonden voor "${q}". Probeer de Engelse naam van de serie.`)].filter(Boolean));
       } catch (err) {
         if (signal.aborted) return;
         results.replaceChildren(h('p', { class: 'muted' }, offlineText()));
@@ -162,7 +169,7 @@ export function openSeriesImport(ctx, { onDone } = {}) {
       list,
       h('p', { class: 'muted gb-form-hint' }, 'Platform en jaar komen van Wikidata. Tik op een platform om het op de kaart te zetten of weg te halen; gekleurd = komt op de kaart.'),
       h('div', { class: 'button-row gb-form-actions' },
-        h('button', { type: 'button', class: 'btn', onClick: () => showSearch(query) }, 'Terug'),
+        h('button', { type: 'button', class: 'btn', onClick: () => showSearch(query, false) }, 'Terug'),
         addBtn));
     updateCount();
 
@@ -192,7 +199,7 @@ export function openSeriesImport(ctx, { onDone } = {}) {
   }
 
   function backButton(query) {
-    return h('div', { class: 'button-row' }, h('button', { type: 'button', class: 'btn', onClick: () => showSearch(query) }, 'Terug'));
+    return h('div', { class: 'button-row' }, h('button', { type: 'button', class: 'btn', onClick: () => showSearch(query, false) }, 'Terug'));
   }
 }
 

@@ -88,12 +88,19 @@ export async function searchSeries(text, signal) {
     const json = await api(WIKIDATA, {
       action: 'wbsearchentities', search: text, language: 'en', uselang: 'en', type: 'item', limit: '15',
     }, t.signal);
-    const isSeries = (r) => /series|franchise|reeks/i.test(r.description || '');
-    const isMedia = (r) => /\b(film|anime|manga|novel|television|tv|album|song|character|company)\b/i.test(r.description || '');
-    return (json.search || [])
-      .map((r) => ({ qid: r.id, label: r.label || r.id, description: r.description || '' }))
-      .filter((r) => !isMedia(r) || isSeries(r))
-      .sort((a, b) => Number(isSeries(b)) - Number(isSeries(a)));
+    // Een serie zelf ("video game series"), niet iets dat er alleen bij hoort:
+    // een losse game "in the … franchise", een personage "from the … series"
+    // of een "universe of the … franchise".
+    const desc = (r) => r.description || '';
+    const isSeries = (r) => /\b(series|franchise|reeks)\b/i.test(desc(r))
+      && !/\b(in|of|from|within|part of) the\b.*\b(series|franchise|reeks)\b/i.test(desc(r))
+      && !/\b(character|fictional|universe|episode|season)\b/i.test(desc(r));
+    const all = (json.search || []).map((r) => ({ qid: r.id, label: r.label || r.id, description: r.description || '' }));
+    const series = all.filter(isSeries);
+    if (series.length) return { results: series, onlySeries: true };
+    // Geen serie gevonden: toon de rest (zonder films, personages en dergelijke)
+    const isMedia = (r) => /\b(film|anime|manga|novel|television|tv|album|song|character|fictional|universe|company)\b/i.test(desc(r));
+    return { results: all.filter((r) => !isMedia(r)), onlySeries: false };
   } finally {
     t.done();
   }
