@@ -381,7 +381,7 @@ function gameRow(g, ctx) {
       onPointerdown: () => prefetch(g, infoById.get(g.id)),
       onClick: () => openDetail(ctx, g.id),
     },
-      h('span', { class: 'gb-title' }, g.title),
+      h('span', { class: 'gb-title', title: g.title }, g.title),
       h('span', { class: 'gb-meta' }, meta)),
     scoreBadge(infoById.get(g.id)));
 }

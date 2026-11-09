@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.13.1
+
+- Op iPad en laptop maakt een game met een lange titel de andere kaarten in dezelfde rij niet meer extra hoog. Elke kaart is nu zo hoog als hij zelf nodig heeft.
+- Lange titels worden na twee regels afgekapt met "…". De volledige titel zie je in het detailscherm (en op de laptop ook als je er met de muis op wijst).
+
 ## 1.13.0
 
 - Bovenaan staat nu het app-icoon naast de naam, en onder de naam zie je welke versie je gebruikt (bijvoorbeeld v1.13.0). Net als in Vaste Lasten. De kopbalk is even hoog gebleven.
