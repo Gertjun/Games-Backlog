@@ -121,89 +121,149 @@
     <img src="icons/icon-192.png" alt="" width="72" height="72">
   </div>
 
-  <!-- Instellingen -->
-  <dialog id="dlg-settings" class="sheet" aria-labelledby="settings-title">
+  <!-- Instellingen. Smal scherm: alle onderdelen onder elkaar.
+       Breed scherm (laptop, iPad liggend): links de onderdelen, rechts de inhoud (zie js/settings-nav.js). -->
+  <dialog id="dlg-settings" class="sheet settings-sheet" aria-labelledby="settings-title">
     <div class="sheet-header">
       <h2 id="settings-title">Instellingen</h2>
       <button id="btn-close-settings" class="icon-btn" type="button" aria-label="Sluiten">✕</button>
     </div>
 
-    <div class="sheet-body">
-      <section id="settings-sync" class="settings-section">
-        <h3>Synchronisatie via GitHub</h3>
-        <p class="hint">Gebruik een <strong>private</strong> repo en een fine-grained token met alleen “Contents: Read and write” op die repo. Het token blijft versleuteld op dit apparaat.</p>
-        <p id="sync-status" class="status-line"></p>
-        <form id="form-github" class="stack">
-          <div class="field-row">
-            <label class="field"><span>Eigenaar</span><input name="owner" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
-            <label class="field"><span>Data-repo</span><input name="repo" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
-          </div>
-          <div class="field-row">
-            <label class="field"><span>Branch</span><input name="branch" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
-            <label class="field"><span>Pad</span><input name="path" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
-          </div>
-          <label class="field"><span>Token</span><input type="password" name="token" autocomplete="off"></label>
-          <label class="check"><input type="checkbox" name="autoSync"> <span>Automatisch synchroniseren</span></label>
-          <div class="button-row">
-            <button class="btn btn-primary" type="submit">Opslaan en testen</button>
-            <button id="btn-sync-now" class="btn" type="button">Nu synchroniseren</button>
-            <button id="btn-github-remove" class="btn btn-ghost" type="button">Ontkoppelen</button>
-          </div>
-          <p id="github-error" class="form-error" role="alert" hidden></p>
-        </form>
-      </section>
+    <div class="sheet-body settings-layout">
+      <nav class="settings-nav" role="tablist" aria-orientation="vertical" aria-label="Onderdelen" hidden>
+        <button type="button" role="tab" class="settings-tab" data-pane="sync" aria-controls="settings-sync">
+          <span class="settings-tab-title">Synchronisatie</span>
+          <span class="settings-tab-badge" data-badge="sync"></span>
+          <span class="settings-tab-sub">Koppeling met GitHub en automatisch synchroniseren</span>
+        </button>
+        <button type="button" role="tab" class="settings-tab" data-pane="security" aria-controls="settings-security">
+          <span class="settings-tab-title">Beveiliging</span>
+          <span class="settings-tab-badge" data-badge="security"></span>
+          <span class="settings-tab-sub">Face ID / passkey en wachtwoord</span>
+        </button>
+        <button type="button" role="tab" class="settings-tab" data-pane="backup" aria-controls="settings-backup">
+          <span class="settings-tab-title">Gegevens</span>
+          <span class="settings-tab-badge" data-badge="backup"></span>
+          <span class="settings-tab-sub">Back-up downloaden en terugzetten</span>
+        </button>
+        <button type="button" role="tab" class="settings-tab" data-pane="about" aria-controls="settings-about">
+          <span class="settings-tab-title">Over de app</span>
+          <span class="settings-tab-badge" data-badge="about"></span>
+          <span class="settings-tab-sub">Versie en updates</span>
+        </button>
+        <button type="button" role="tab" class="settings-tab" data-pane="device" aria-controls="settings-device">
+          <span class="settings-tab-title">Dit apparaat</span>
+          <span class="settings-tab-badge" data-badge="device"></span>
+          <span class="settings-tab-sub">Gegevens op dit apparaat wissen</span>
+        </button>
+      </nav>
 
-      <section id="settings-security" class="settings-section">
-        <h3>Beveiliging</h3>
-        <div class="setting-line">
-          <div>
-            <strong>Face ID / passkey</strong>
-            <p id="bio-status" class="hint"></p>
+      <div class="settings-panes">
+        <section id="settings-sync" class="settings-section" data-pane="sync" role="tabpanel" aria-labelledby="pane-title-sync">
+          <h3 id="pane-title-sync" class="settings-pane-title">Synchronisatie</h3>
+          <div class="settings-cards">
+            <div class="settings-card">
+              <h4>Synchroniseren via GitHub</h4>
+              <p id="sync-status" class="status-line"></p>
+              <p id="sync-target" class="hint" hidden></p>
+              <div class="button-row">
+                <button id="btn-sync-now" class="btn" type="button">Nu synchroniseren</button>
+                <button id="btn-github-remove" class="btn btn-ghost btn-danger-text" type="button">Ontkoppelen</button>
+              </div>
+              <p id="sync-unlink-hint" class="hint">Ontkoppelen haalt het token van dit apparaat. Je games blijven hier en in GitHub gewoon staan.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Koppeling</h4>
+              <p class="hint">Gebruik een <strong>private</strong> repo en een fine-grained token met alleen “Contents: Read and write” op die repo. Het token blijft versleuteld op dit apparaat.</p>
+              <form id="form-github" class="stack">
+                <div class="field-row">
+                  <label class="field"><span>Eigenaar</span><input name="owner" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+                  <label class="field"><span>Data-repo</span><input name="repo" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+                </div>
+                <div class="field-row">
+                  <label class="field"><span>Branch</span><input name="branch" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+                  <label class="field"><span>Pad</span><input name="path" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+                </div>
+                <label class="field"><span>Token</span><input type="password" name="token" autocomplete="off"></label>
+                <label class="check"><input type="checkbox" name="autoSync"> <span>Automatisch synchroniseren</span></label>
+                <div class="button-row">
+                  <button class="btn btn-primary" type="submit">Opslaan en testen</button>
+                </div>
+                <p id="github-error" class="form-error" role="alert" hidden></p>
+              </form>
+            </div>
           </div>
-          <button id="btn-bio-toggle" class="btn" type="button">Inschakelen</button>
-        </div>
-        <form id="form-password" class="stack">
-          <strong>Wachtwoord wijzigen</strong>
-          <input type="text" name="username" autocomplete="username" value="" class="visually-hidden" tabindex="-1" aria-hidden="true">
-          <label class="field"><span>Huidig wachtwoord</span><input type="password" name="current" autocomplete="current-password" required></label>
-          <label class="field"><span>Nieuw wachtwoord</span><input type="password" name="next" autocomplete="new-password" data-strength required></label>
-          <label class="field"><span>Herhaal nieuw wachtwoord</span><input type="password" name="confirm" autocomplete="new-password" required></label>
-          <div class="button-row"><button class="btn" type="submit">Wachtwoord wijzigen</button></div>
-          <p id="password-error" class="form-error" role="alert" hidden></p>
-        </form>
-      </section>
+        </section>
 
-      <section id="settings-backup" class="settings-section">
-        <h3>Back-up</h3>
-        <div class="button-row">
-          <button id="btn-export" class="btn" type="button">Versleutelde back-up downloaden</button>
-          <button id="btn-export-plain" class="btn btn-ghost" type="button">Leesbare export (JSON)</button>
-        </div>
-        <form id="form-restore" class="stack">
-          <strong>Back-up terugzetten</strong>
-          <label class="field"><span>Back-upbestand</span><input type="file" name="file" accept="application/json,.json"></label>
-          <label class="field"><span>Wachtwoord van de back-up</span><input type="password" name="password" autocomplete="off" required></label>
-          <div class="button-row"><button class="btn" type="submit">Terugzetten</button></div>
-          <p id="restore-error" class="form-error" role="alert" hidden></p>
-        </form>
-      </section>
-
-      <section class="settings-section">
-        <h3>Over</h3>
-        <div class="setting-line">
-          <div>
-            <p><span data-app-name>Mijn App</span> · versie <span id="app-version"></span></p>
-            <p id="version-warning" class="form-error" hidden></p>
+        <section id="settings-security" class="settings-section" data-pane="security" role="tabpanel" aria-labelledby="pane-title-security">
+          <h3 id="pane-title-security" class="settings-pane-title">Beveiliging</h3>
+          <div class="settings-cards">
+            <div class="settings-card">
+              <h4>Face ID / passkey</h4>
+              <p id="bio-status" class="status-line"></p>
+              <div class="button-row"><button id="btn-bio-toggle" class="btn" type="button">Inschakelen</button></div>
+              <p class="hint">Hiermee ontgrendel je de app zonder je wachtwoord in te typen. Dit geldt alleen voor dit apparaat.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Wachtwoord wijzigen</h4>
+              <form id="form-password" class="stack">
+                <input type="text" name="username" autocomplete="username" value="" class="visually-hidden" tabindex="-1" aria-hidden="true">
+                <label class="field"><span>Huidig wachtwoord</span><input type="password" name="current" autocomplete="current-password" required></label>
+                <label class="field"><span>Nieuw wachtwoord</span><input type="password" name="next" autocomplete="new-password" data-strength required></label>
+                <label class="field"><span>Herhaal nieuw wachtwoord</span><input type="password" name="confirm" autocomplete="new-password" required></label>
+                <div class="button-row"><button class="btn" type="submit">Wachtwoord wijzigen</button></div>
+                <p id="password-error" class="form-error" role="alert" hidden></p>
+              </form>
+            </div>
           </div>
-          <button id="btn-check-update" class="btn" type="button">Zoek naar updates</button>
-        </div>
-      </section>
+        </section>
 
-      <section class="settings-section danger-zone">
-        <h3>Gevarenzone</h3>
-        <p class="hint">Wist de kluis, het token en de passkey-koppeling op dit apparaat. Het bestand op GitHub blijft bestaan.</p>
-        <button id="btn-reset" class="btn btn-danger" type="button">Dit apparaat wissen</button>
-      </section>
+        <section id="settings-backup" class="settings-section" data-pane="backup" role="tabpanel" aria-labelledby="pane-title-backup">
+          <h3 id="pane-title-backup" class="settings-pane-title">Gegevens</h3>
+          <div class="settings-cards">
+            <div class="settings-card">
+              <h4>Back-up maken</h4>
+              <p class="hint">De versleutelde back-up kun je alleen openen met je wachtwoord. De leesbare export is niet versleuteld.</p>
+              <div class="button-row">
+                <button id="btn-export" class="btn" type="button">Versleutelde back-up downloaden</button>
+                <button id="btn-export-plain" class="btn btn-ghost" type="button">Leesbare export (JSON)</button>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h4>Back-up terugzetten</h4>
+              <form id="form-restore" class="stack">
+                <label class="field"><span>Back-upbestand</span><input type="file" name="file" accept="application/json,.json"></label>
+                <label class="field"><span>Wachtwoord van de back-up</span><input type="password" name="password" autocomplete="off" required></label>
+                <div class="button-row"><button class="btn" type="submit">Terugzetten</button></div>
+                <p id="restore-error" class="form-error" role="alert" hidden></p>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings-about" class="settings-section" data-pane="about" role="tabpanel" aria-labelledby="pane-title-about">
+          <h3 id="pane-title-about" class="settings-pane-title">Over de app</h3>
+          <div class="settings-cards">
+            <div class="settings-card">
+              <h4><span data-app-name>Mijn App</span></h4>
+              <p class="status-line">Versie <span id="app-version"></span></p>
+              <p id="version-warning" class="form-error" hidden></p>
+              <div class="button-row"><button id="btn-check-update" class="btn" type="button">Zoek naar updates</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings-device" class="settings-section danger-zone" data-pane="device" role="tabpanel" aria-labelledby="pane-title-device">
+          <h3 id="pane-title-device" class="settings-pane-title">Dit apparaat</h3>
+          <div class="settings-cards">
+            <div class="settings-card">
+              <h4>Dit apparaat wissen</h4>
+              <p class="hint">Wist de kluis, het token en de passkey-koppeling op dit apparaat. Het bestand op GitHub blijft bestaan.</p>
+              <div class="button-row"><button id="btn-reset" class="btn btn-danger" type="button">Dit apparaat wissen</button></div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   </dialog>
 

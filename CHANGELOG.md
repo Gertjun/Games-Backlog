@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0
+
+- De instellingen zijn op laptop en iPad (liggend) opnieuw ingedeeld. Je krijgt een groot venster met links de onderdelen (Synchronisatie, Beveiliging, Gegevens, Over de app en Dit apparaat), elk met een korte omschrijving. Rechts staat de inhoud van het gekozen onderdeel in losse kaarten naast elkaar, in plaats van één lange lijst om doorheen te scrollen.
+- Achter elk onderdeel zie je in één oogopslag de stand van zaken: of synchronisatie gekoppeld is (met een groen, oranje of rood bolletje), of Face ID aan staat en welke versie je gebruikt.
+- Bij Synchronisatie staat nu ook met welke repo en welk bestand dit apparaat gekoppeld is.
+- Met de pijltjestoetsen omhoog en omlaag loop je door de onderdelen.
+- Op de iPhone staan de instellingen nog steeds onder elkaar, nu wel netjes in kaarten gegroepeerd.
+
 ## 1.9.0
 
 - Nieuw: de knop "Wat ga ik nu spelen?" kiest willekeurig een game uit je backlog. Staan er filters aan (bijvoorbeeld alleen SNES of alleen retro), dan kiest hij alleen daarbinnen. Je ziet de boxart, platforms, jaar en score, en je kunt meteen op "Ga ik spelen" tikken (de game wordt dan Bezig), de details bekijken of een andere suggestie vragen. Een game die je net voorgesteld kreeg, komt niet meteen weer terug.

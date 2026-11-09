@@ -3,7 +3,7 @@
 // BIJ ELKE RELEASE: VERSION ophogen (gelijk aan js/config.js).
 // NIEUW BESTAND?    Toevoegen aan PRECACHE.
 
-const VERSION = '1.9.0';
+const VERSION = '1.10.0';
 
 // De cache-naam bevat het pad van de app, zodat meerdere apps onder
 // <gebruiker>.github.io elkaars cache niet opruimen.
@@ -24,6 +24,7 @@ const PRECACHE = [
   './js/platforms.js',
   './js/gameinfo.js',
   './js/enrich.js',
+  './js/settings-nav.js',
   './js/core/shell.js',
   './js/core/vault.js',
   './js/core/crypto.js',

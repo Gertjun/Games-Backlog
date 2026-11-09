@@ -614,3 +614,94 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 @media (prefers-reduced-motion: reduce) {
   .gb-pick-blank { animation: none; }
 }
+
+/* ---------- Instellingen ----------
+   Smal scherm: onderdelen onder elkaar, elk met kaarten.
+   Breed scherm (900px+): groot venster met links de onderdelen
+   en rechts de inhoud van het gekozen onderdeel (js/settings-nav.js). */
+
+.settings-pane-title { margin: 0; font-size: 1.05rem; }
+.danger-zone .settings-pane-title { color: var(--danger); }
+.settings-cards { display: grid; gap: 12px; }
+.settings-card {
+  display: grid; gap: 12px; align-content: start; min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.settings-card h4 { margin: 0; font-size: 1rem; }
+.settings-card p { margin: 0; }
+.settings-card .button-row .btn[hidden] { display: none; }
+.btn-danger-text { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+
+.settings-tab-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap;
+}
+.settings-tab-badge[hidden] { display: none; }
+.settings-tab-badge::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none;
+}
+.settings-tab-badge[data-tone="ok"]::before { background: var(--ok); }
+.settings-tab-badge[data-tone="warn"]::before { background: var(--warn); }
+.settings-tab-badge[data-tone="accent"]::before { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+.settings-tab-badge[data-tone="danger"] { color: var(--danger); }
+.settings-tab-badge[data-tone="danger"]::before { background: var(--danger); }
+
+@media (min-width: 900px) {
+  dialog.settings-sheet {
+    width: min(1180px, calc(100vw - 64px));
+    height: min(780px, calc(100dvh - 64px));
+    max-height: none;
+  }
+  .settings-sheet .sheet-header { padding: 16px 16px 16px 28px; }
+  .settings-sheet .sheet-header h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+
+  .settings-sheet.is-wide .settings-layout {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: minmax(280px, 340px) 1fr;
+    padding: 0; overflow: hidden;
+  }
+
+  /* Links: de onderdelen */
+  .settings-nav {
+    display: grid; align-content: start; gap: 4px;
+    padding: 20px 16px 24px 20px; overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .settings-tab {
+    position: relative;
+    display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 2px;
+    width: 100%; min-height: var(--tap); padding: 12px 36px 12px 14px;
+    font: inherit; text-align: left; color: var(--text);
+    background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  }
+  .settings-tab::after {
+    content: ""; position: absolute; right: 16px; top: 18px;
+    width: 7px; height: 7px; border: solid var(--muted); border-width: 0 2px 2px 0;
+    transform: rotate(-45deg);
+  }
+  .settings-tab:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+  .settings-tab[aria-selected="true"] { background: var(--surface-2); }
+  .settings-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .settings-tab-title { font-weight: 600; }
+  .settings-tab[aria-selected="true"] .settings-tab-title { font-weight: 700; }
+  .settings-tab-sub { grid-column: 1 / -1; font-size: 0.85rem; color: var(--muted); line-height: 1.35; }
+  .settings-tab-badge { align-self: center; }
+
+  /* Rechts: de inhoud van het gekozen onderdeel */
+  .settings-sheet.is-wide .settings-panes {
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 20px 28px calc(28px + var(--safe-bottom));
+  }
+  .settings-sheet.is-wide .settings-section { display: none; padding: 0; border: 0; }
+  .settings-sheet.is-wide .settings-section.is-active { display: grid; gap: 16px; }
+  .settings-sheet.is-wide .settings-pane-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .settings-sheet.is-wide .settings-cards {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); align-items: start; gap: 20px;
+  }
+  .settings-sheet.is-wide .settings-card { padding: 20px 22px; }
+  .settings-sheet.is-wide .settings-card h4 { font-size: 1.05rem; }
+}

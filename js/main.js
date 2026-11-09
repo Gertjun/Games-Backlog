@@ -1,4 +1,5 @@
 import { start } from './core/shell.js';
+import './settings-nav.js';
 
 start().catch((err) => {
   console.error(err);
