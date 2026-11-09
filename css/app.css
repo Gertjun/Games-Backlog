@@ -107,20 +107,36 @@ body { background-color: var(--bg); }
 .gb-chip[aria-selected="true"] { background: var(--brand-gradient); border-color: transparent; color: #fff; }
 .gb-chip-n { margin-left: 6px; opacity: 0.7; font-variant-numeric: tabular-nums; }
 
-/* Filter, Weergave en Sorteren. Op een smal scherm vallen de groepen weg
-   (display: contents) en staan de statusknoppen en keuzelijsten compact in
-   een raster, zonder koppen. In de zijbalk (vanaf 1000px) staan ze in
-   groepen onder een kop; zie de media query onderaan. */
+/* Filter, Weergave en Sorteren.
+   iPhone (smal of liggend): de groepen vallen weg (display: contents) en de
+   statusknoppen en keuzelijsten staan compact in een raster, zonder koppen.
+   iPad staand en groter: geen statusknoppen maar een uitklapmenu, en elke
+   groep staat onder een kop. Tot 1000px staan Filter (3 + 2 menu's) en
+   daaronder Weergave en Sorteren naast elkaar; vanaf 1000px alles onder
+   elkaar in de zijbalk (zie de media query onderaan). */
 .gb-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gb-ctl, .gb-ctl-fields { display: contents; }
 .gb-dd-status { display: none; } /* op smalle schermen: statusknoppen */
 .gb-ctl-title { display: none; }
 .gb-controls .gb-chips { grid-column: 1 / -1; margin-bottom: 0; }
-@media (min-width: 640px) {
-  .gb-controls { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 640px) and (max-width: 999px) and (max-height: 499px) {
+  .gb-controls { grid-template-columns: repeat(3, 1fr); } /* iPhone liggend */
 }
-@media (min-width: 960px) {
-  .gb-controls { grid-template-columns: repeat(6, 1fr); }
+@media (min-width: 640px) and (min-height: 500px), (min-width: 1000px) {
+  .gb-controls .gb-chips { display: none; }
+  .gb-dd-status { display: block; }
+  .gb-ctl, .gb-ctl-fields { display: grid; gap: 8px; min-width: 0; }
+  .gb-ctl { gap: 10px; }
+  .gb-ctl-title {
+    display: block; margin: 0 4px; font-size: 0.8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  }
+  .gb-controls { grid-template-columns: 1fr 1fr; gap: 20px 12px; }
+  .gb-ctl[aria-labelledby="gb-ctl-filter"] { grid-column: 1 / -1; }
+  /* Filter: status, systeem en serie op de eerste rij, platform en jaar op de tweede */
+  .gb-ctl-fields { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .gb-ctl-fields > :nth-child(-n+3) { grid-column: span 2; }
+  .gb-ctl-fields > :nth-child(n+4) { grid-column: span 3; }
 }
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }
@@ -598,17 +614,11 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
     padding: 2px; margin: -2px; scrollbar-width: thin;
   }
   .gb-chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
-  .gb-controls .gb-chips { display: none; } /* zijbalk: status als uitklapmenu */
-  .gb-dd-status { display: block; }
 
-  /* Zijbalk: elke groep met een kop erboven */
+  /* Zijbalk: elke groep onder elkaar, met een kop erboven */
   .gb-controls { grid-template-columns: 1fr; gap: 20px; }
-  .gb-ctl, .gb-ctl-fields { display: grid; gap: 8px; min-width: 0; }
-  .gb-ctl { gap: 10px; }
-  .gb-ctl-title {
-    display: block; margin: 0 4px; font-size: 0.8rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
-  }
+  .gb-ctl-fields { grid-template-columns: 1fr; }
+  .gb-ctl-fields > * { grid-column: auto; }
   .gb-list .gb-group:first-child .gb-group-head { margin-top: 0; }
 }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.23.2
+
+- **iPad staand: filters netjes geordend.** De status is nu een uitklapmenu, net als in de zijbalk liggend en op de laptop. De losse statusknoppen (Alles, Backlog, Bezig …) staan alleen nog op de iPhone.
+- De keuzes staan in groepen met een kop: onder **Filter** eerst status, systeem en serie, daaronder platform en jaar. Daaronder staan **Weergave** en **Sorteren** naast elkaar. De menu's zijn breed genoeg, dus de namen worden niet meer afgekapt ("Alle sy…").
+- Op de iPhone (ook liggend), op de iPad liggend en op de laptop verandert er niets.
+
 ## 1.23.1
 
 - **Hele serie toevoegen is duidelijker:** bij het zoeken zie je nu alleen nog echte series. Losse games, personages en "universe"-pagina's staan er niet meer tussen. Daardoor leek het eerste scherm al de keuzelijst, maar daar stonden nog geen platformlabels.
