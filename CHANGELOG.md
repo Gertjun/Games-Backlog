@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.0
+
+- In de zijbalk (laptop, iPad liggend) is de status nu ook een uitklapmenu, net als de andere filters. De losse statusknoppen zijn daar weg.
+- In alle filtermenu's (status, systeem, serie, platform en jaar) staat rechts naast elke keuze hoeveel games je dan ziet. Die aantallen houden rekening met de andere filters die al aan staan. Keuzes met 0 games zijn grijs.
+- Het aantal bij de huidige keuze staat ook rechts in de knop zelf (op de iPhone alleen in het geopende menu, omdat de knoppen daar smal zijn).
+- Weergave en Sorteren gebruiken hetzelfde menu, maar zonder aantallen: die zouden bij elke keuze gelijk zijn.
+- Op de iPhone blijven de statusknoppen (Alles, Backlog, Bezig …) gewoon staan.
+
 ## 1.11.0
 
 - De zijbalk op laptop en iPad (liggend) is overzichtelijker: de keuzes staan nu in groepen met een kop erboven. Onder **Filter** staan de statusknoppen (Alles, Backlog, Bezig, Uitgespeeld, Gestopt) en de keuzes voor systeem, serie, platform en jaar. Daaronder volgen **Weergave** (Per serie, Eén lijst, Boxart-muur) en **Sorteren**.

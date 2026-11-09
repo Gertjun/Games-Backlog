@@ -101,8 +101,8 @@ body { background-color: var(--bg); }
    een raster, zonder koppen. In de zijbalk (vanaf 1000px) staan ze in
    groepen onder een kop; zie de media query onderaan. */
 .gb-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.gb-controls select { min-width: 0; }
 .gb-ctl, .gb-ctl-fields { display: contents; }
+.gb-dd-status { display: none; } /* op smalle schermen: statusknoppen */
 .gb-ctl-title { display: none; }
 .gb-controls .gb-chips { grid-column: 1 / -1; margin-bottom: 0; }
 @media (min-width: 640px) {
@@ -456,6 +456,49 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 .gb-enrich { margin: 0; font-size: 0.8rem; color: var(--muted); }
 .gb-enrich[hidden] { display: none; }
 
+/* ---------- Uitklapmenu's (js/dropdown.js) ----------
+   Ziet eruit als een gewoon invoerveld; in het menu staat links de keuze
+   en rechts het aantal games. */
+.gb-dd { position: relative; min-width: 0; }
+.gb-dd-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  min-height: var(--tap); padding: 10px 10px 10px 12px;
+  font: inherit; font-size: 16px; text-align: left; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.gb-dd-btn:focus-visible, .gb-dd.is-open .gb-dd-btn {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.gb-dd-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gb-dd-n { flex: none; color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.gb-dd-chev {
+  flex: none; width: 16px; height: 16px; fill: none; stroke: var(--muted);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s;
+}
+.gb-dd.is-open .gb-dd-chev { transform: rotate(180deg); }
+.gb-dd-list {
+  position: fixed; z-index: 60; margin: 0; padding: 4px; list-style: none;
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); border-radius: var(--radius-sm);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+  outline: none;
+}
+.gb-dd-list[hidden] { display: none; }
+.gb-dd-opt {
+  display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px;
+  border-radius: 8px; cursor: pointer; user-select: none;
+}
+.gb-dd-opt.is-active { background: var(--surface-2); }
+.gb-dd-opt[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+.gb-dd-opt[aria-selected="true"] .gb-dd-n { color: var(--accent); }
+.gb-dd-opt.is-empty:not([aria-selected="true"]) { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .gb-dd-chev { transition: none; } }
+/* iPhone: te weinig ruimte in de knop, het aantal staat dan alleen in het menu */
+@media (max-width: 639px) { .gb-dd-btn .gb-dd-n { display: none; } }
+
 /* ---------- Grotere schermen (iPad en laptop) ----------
    Telefoon: alles onder elkaar, zoals altijd.
    Vanaf 700px (iPad staand): bredere pagina en de games als losse kaarten
@@ -502,7 +545,8 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
     padding: 2px; margin: -2px; scrollbar-width: thin;
   }
   .gb-chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
-  .gb-controls .gb-chips { margin: 0; }
+  .gb-controls .gb-chips { display: none; } /* zijbalk: status als uitklapmenu */
+  .gb-dd-status { display: block; }
 
   /* Zijbalk: elke groep met een kop erboven */
   .gb-controls { grid-template-columns: 1fr; gap: 20px; }
