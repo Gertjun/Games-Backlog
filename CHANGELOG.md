@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.3
+
+- **Alle filterknoppen even groot.** Liggend (in de zijbalk) waren status, systeem en serie iets smaller dan de rest. Nu zijn ze allemaal even breed.
+- Staand op de iPad staan alle menu's in drie gelijke kolommen: status, systeem en serie bovenaan, platform en jaar daaronder, en Weergave en Sorteren precies onder de filters. Rechts op de tweede en derde rij blijft een plek leeg.
+
 ## 1.23.2
 
 - **iPad staand: filters netjes geordend.** De status is nu een uitklapmenu, net als in de zijbalk liggend en op de laptop. De losse statusknoppen (Alles, Backlog, Bezig …) staan alleen nog op de iPhone.

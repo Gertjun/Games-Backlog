@@ -131,12 +131,11 @@ body { background-color: var(--bg); }
     display: block; margin: 0 4px; font-size: 0.8rem; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
   }
-  .gb-controls { grid-template-columns: 1fr 1fr; gap: 20px 12px; }
+  /* Drie even brede kolommen. De tussenruimte is gelijk aan die tussen de
+     filtermenu's, zodat Weergave en Sorteren precies onder de filters staan. */
+  .gb-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 8px; }
   .gb-ctl[aria-labelledby="gb-ctl-filter"] { grid-column: 1 / -1; }
-  /* Filter: status, systeem en serie op de eerste rij, platform en jaar op de tweede */
-  .gb-ctl-fields { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .gb-ctl-fields > :nth-child(-n+3) { grid-column: span 2; }
-  .gb-ctl-fields > :nth-child(n+4) { grid-column: span 3; }
+  .gb-ctl-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }
@@ -616,9 +615,8 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   .gb-chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
 
   /* Zijbalk: elke groep onder elkaar, met een kop erboven */
-  .gb-controls { grid-template-columns: 1fr; gap: 20px; }
-  .gb-ctl-fields { grid-template-columns: 1fr; }
-  .gb-ctl-fields > * { grid-column: auto; }
+  .gb-controls { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .gb-ctl-fields { grid-template-columns: minmax(0, 1fr); }
   .gb-list .gb-group:first-child .gb-group-head { margin-top: 0; }
 }
 
