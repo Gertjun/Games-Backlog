@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0
+
+- Nieuw: de knop "Wat ga ik nu spelen?" kiest willekeurig een game uit je backlog. Staan er filters aan (bijvoorbeeld alleen SNES of alleen retro), dan kiest hij alleen daarbinnen. Je ziet de boxart, platforms, jaar en score, en je kunt meteen op "Ga ik spelen" tikken (de game wordt dan Bezig), de details bekijken of een andere suggestie vragen. Een game die je net voorgesteld kreeg, komt niet meteen weer terug.
+- Nieuw: de weergave "Boxart-muur" (bij Weergave). Alle games als hoesjes in een raster, met linksboven een rondje voor Bezig, Uitgespeeld of Gestopt en rechtsonder de score. Tik op een hoesje voor het detailscherm. Zoeken, filters en sorteren werken gewoon. Heeft een game (nog) geen boxart, dan zie je een vlak in de kleur van het platform met de titel.
+
 ## 1.8.0
 
 - De app is nu ook prettig te gebruiken op iPad en laptop. Op een breder scherm staan de games als losse kaarten in twee of drie kolommen, in plaats van één smalle lijst in het midden.

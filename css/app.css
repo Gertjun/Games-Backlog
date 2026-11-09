@@ -498,3 +498,119 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   .gb-filters { grid-template-columns: 1fr; }
   .gb-list .gb-group:first-child .gb-group-head { margin-top: 0; }
 }
+
+/* ---------- Hoesjes (boxart-muur en "Wat ga ik nu spelen?") ----------
+   Een vlak in de platformkleur met beginletter en titel; de boxart komt
+   eroverheen zodra hij geladen is. */
+.gb-cover {
+  --pc: var(--accent);
+  position: relative; display: grid; overflow: hidden; isolation: isolate;
+  aspect-ratio: 3 / 4; border-radius: 10px; background: var(--surface-2);
+}
+.gb-cover > * { grid-area: 1 / 1; }
+.gb-cover-empty {
+  display: grid; place-content: center; justify-items: center; gap: 4px; padding: 10px; text-align: center;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pc) 70%, #111), color-mix(in srgb, var(--pc) 35%, #000));
+  color: #fff;
+}
+.gb-cover-empty .gb-picon { --pci: #fff; width: 26px; height: 26px; opacity: 0.8; }
+.gb-cover-letter { font-size: 2rem; font-weight: 800; line-height: 1; opacity: 0.9; }
+.gb-cover-title {
+  font-size: 0.72rem; font-weight: 600; line-height: 1.25; opacity: 0.9;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.gb-cover-img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center top;
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.gb-cover.is-loaded .gb-cover-img { opacity: 1; }
+.gb-cover.is-loaded .gb-cover-empty { visibility: hidden; }
+
+/* ---------- Boxart-muur ---------- */
+.gb-wall {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;
+}
+.gb-wall-item { min-width: 0; }
+.gb-wall-tile {
+  position: relative; display: block; width: 100%; padding: 0; border: 0; background: none;
+  border-radius: 10px; cursor: pointer; color: inherit; font: inherit;
+  box-shadow: 0 6px 16px rgb(17 20 58 / 0.18), 0 0 0 1px color-mix(in srgb, var(--accent) 14%, var(--border));
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.gb-wall-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gb-wall-status {
+  position: absolute; top: 6px; left: 6px; z-index: 1;
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--muted);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35), 0 0 0 2px rgb(255 255 255 / 0.85);
+}
+.gb-wall-item[data-status="done"] .gb-wall-status { background: var(--ok); }
+.gb-wall-item[data-status="playing"] .gb-wall-status { background: var(--warn); }
+.gb-wall-item[data-status="dropped"] .gb-wall-status { background: var(--danger); }
+.gb-wall-score {
+  --sc: var(--muted);
+  position: absolute; right: 6px; bottom: 6px; z-index: 1;
+  min-width: 26px; height: 22px; padding: 0 4px; box-sizing: border-box; border-radius: 6px;
+  display: grid; place-items: center; font-size: 0.78rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: #fff; background: var(--sc); box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+.gb-wall-score[data-level="good"] { --sc: #1fae5b; }
+.gb-wall-score[data-level="mixed"] { --sc: #e3a400; }
+.gb-wall-score[data-level="bad"] { --sc: #e5484d; }
+.gb-wall-score[data-source="gr"] { background: rgb(0 0 0 / 0.65); color: #fff; box-shadow: inset 0 0 0 2px var(--sc); }
+@media (min-width: 700px) {
+  .gb-wall { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+}
+@media (hover: hover) {
+  .gb-wall-tile:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgb(17 20 58 / 0.25), 0 0 0 2px color-mix(in srgb, var(--accent) 55%, var(--border)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gb-wall-tile, .gb-cover-img { transition: none; }
+  .gb-wall-tile:hover { transform: none; }
+}
+
+/* ---------- Wat ga ik nu spelen? ---------- */
+.gb-pick-btn {
+  width: 100%; gap: 8px; font-weight: 600; color: var(--text);
+  background: var(--surface);
+  border: 1px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--brand-gradient) border-box;
+}
+.gb-dice { stroke-width: 2; }
+.gb-pick-body { display: grid; gap: 14px; padding-top: 20px; }
+.gb-pick-stage { display: grid; justify-items: center; gap: 10px; text-align: center; min-height: 300px; align-content: start; }
+.gb-pick-cover {
+  width: 170px; border-radius: 12px;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.gb-pick-cover .gb-cover-letter { font-size: 3rem; }
+.gb-pick-cover:not(.gb-pick-blank) { box-shadow: none; }
+/* In het keuzescherm de hele boxart tonen, in zijn eigen verhouding */
+.gb-pick-cover.is-loaded { aspect-ratio: auto; width: auto; background: none; overflow: visible; }
+.gb-pick-cover.is-loaded .gb-cover-empty { display: none; }
+.gb-pick-cover.is-loaded .gb-cover-img {
+  width: auto; height: auto; max-width: min(220px, 60vw); max-height: 260px; border-radius: 12px;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.gb-pick-cover:not(.is-loaded) { box-shadow: 0 18px 40px rgb(0 0 0 / 0.3); }
+.gb-pick-blank {
+  background: linear-gradient(90deg, var(--surface-2) 0%, color-mix(in srgb, var(--surface-2) 55%, var(--surface)) 50%, var(--surface-2) 100%);
+  background-size: 200% 100%; animation: gb-shimmer 0.8s linear infinite;
+}
+.gb-pick-title { margin: 6px 0 0; font-size: 1.35rem; line-height: 1.2; }
+.gb-pick-flash { margin: 6px 0 0; font-size: 1.35rem; font-weight: 700; color: var(--muted); min-height: 1.6em; }
+.gb-pick-tags { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
+.gb-pick-score { margin: 0; min-width: 30px; height: 28px; font-size: 0.85rem; border-radius: 7px; }
+.gb-pick-group { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.gb-pick-pool { margin: 0; text-align: center; font-size: 0.85rem; }
+.gb-pick-actions { display: grid; gap: 8px; }
+.gb-pick-actions .btn { width: 100%; gap: 8px; }
+.gb-pick-actions .btn[hidden] { display: none; }
+@media (min-width: 640px) {
+  .gb-pick-actions { grid-template-columns: 1fr 1fr; }
+  .gb-pick-actions .btn-primary { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gb-pick-blank { animation: none; }
+}

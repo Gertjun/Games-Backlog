@@ -173,8 +173,13 @@ export const app = {
       select('group', 'Serie', [['', 'Alle series'], ...uniq(all.map((g) => g.group)).map((v) => [v, v])]),
       select('platform', 'Platform', [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])]),
       select('year', 'Jaar van release', [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])]),
-      select('grouped', 'Weergave', [['yes', 'Per serie'], ['no', 'Eén lijst']]),
+      select('grouped', 'Weergave', [['yes', 'Per serie'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']]),
       select('sort', 'Sorteren', [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']]));
+
+    const pickBtn = h('button', {
+      class: 'btn gb-pick-btn', type: 'button',
+      onClick: () => openPicker(ctx, all),
+    }, diceIcon(), 'Wat ga ik nu spelen?');
 
     const addBtn = h('button', {
       class: 'gb-fab', type: 'button', 'aria-label': 'Game toevoegen',
@@ -184,7 +189,7 @@ export const app = {
     // Op een telefoon staat alles onder elkaar; op iPad (liggend) en laptop
     // staan voortgang, zoeken en filters in een zijbalk naast de lijst.
     root.replaceChildren(h('div', { class: 'gb-layout' },
-      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), search, chipsEl, filters),
+      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), pickBtn, search, chipsEl, filters),
       listEl), addBtn);
     refresh();
     watchLock(root);
@@ -305,6 +310,10 @@ function renderList(el, all, ctx) {
       h('p', { class: 'muted' }, all.length ? 'Pas je zoekopdracht of filters aan.' : 'Tik op + om een game toe te voegen.')));
     return;
   }
+  if (view.grouped === 'wall') {
+    el.replaceChildren(h('ul', { class: 'gb-wall', 'aria-label': 'Boxart-muur' }, sortGames(filtered).map((g) => wallTile(g, ctx))));
+    return;
+  }
   if (view.grouped !== 'yes') {
     el.replaceChildren(h('ul', { class: 'card gb-games' }, sortGames(filtered).map((g) => gameRow(g, ctx))));
     return;
@@ -376,6 +385,170 @@ async function cycleStatus(ctx, g) {
     updateById(d.games, g.id, changes);
   });
   ctx.toast(`${g.title}: ${STATUS[status].label}`, status === 'done' ? 'ok' : 'info');
+}
+
+/* ---------- Boxart ---------- */
+
+/**
+ * Kleinere versie van de Wikipedia-boxart voor de muur (330 px is een van
+ * de standaardformaten van Wikimedia). Andere links blijven zoals ze zijn.
+ */
+function wallImage(src) {
+  return String(src || '').replace(/\/500px-([^/]+)$/, '/330px-$1');
+}
+
+/**
+ * Hoesje met daaronder een gekleurd vlak (platformkleur, beginletter en
+ * titel). Dat vlak is zichtbaar tot de boxart geladen is, en blijft staan
+ * als er geen boxart is of hij niet laadt.
+ */
+function coverArt(g, src, { cls = '', lazy = true } = {}) {
+  const first = (g.platforms || [])[0];
+  const wrap = h('div', { class: `gb-cover ${cls}`.trim(), dataset: first ? { platform: platformKey(first) } : {} },
+    h('div', { class: 'gb-cover-empty', 'aria-hidden': 'true' },
+      first ? platformIcon(first) : null,
+      h('span', { class: 'gb-cover-letter' }, (g.title.match(/[A-Za-z0-9]/)?.[0] || '?').toUpperCase()),
+      h('span', { class: 'gb-cover-title' }, g.title)));
+  if (src) {
+    const img = h('img', {
+      src, alt: '', class: 'gb-cover-img', decoding: 'async', referrerpolicy: 'no-referrer',
+      loading: lazy ? 'lazy' : null,
+    });
+    img.addEventListener('load', () => (img.decode ? img.decode().catch(() => {}) : Promise.resolve())
+      .then(() => wrap.classList.add('is-loaded')));
+    img.addEventListener('error', () => img.remove());
+    wrap.append(img);
+  }
+  return wrap;
+}
+
+function wallTile(g, ctx) {
+  const info = infoById.get(g.id);
+  const st = STATUS[g.status] || STATUS.backlog;
+  const sc = mainScore(info);
+  const label = [g.title, st.label, ...(g.platforms || []), sc ? `score ${sc.score}` : ''].filter(Boolean).join(', ');
+  return h('li', { class: 'gb-wall-item', dataset: { status: g.status } },
+    h('button', {
+      type: 'button', class: 'gb-wall-tile', title: g.title, 'aria-label': label,
+      onPointerdown: () => prefetch(g, info),
+      onClick: () => openDetail(ctx, g.id),
+    },
+    coverArt(g, info?.found ? wallImage(info.image) : ''),
+    g.status !== 'backlog' ? h('span', { class: 'gb-wall-status', 'aria-hidden': 'true' }, st.icon) : null,
+    sc ? h('span', { class: 'gb-wall-score', 'aria-hidden': 'true', dataset: { level: scoreLevel(sc.score), source: sc.source } }, String(sc.score)) : null));
+}
+
+/* ---------- Wat ga ik nu spelen? ---------- */
+// Kiest willekeurig een game met status Backlog, binnen de filters die op
+// dat moment aanstaan (zoeken, categorie, serie, platform, jaar). Een game
+// die je net al voorgesteld kreeg, komt niet meteen opnieuw.
+
+const recentPicks = [];
+
+function diceIcon() {
+  return icon('M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01', 'gb-d-ico gb-dice');
+}
+
+function pickPool(all) {
+  return filterGames(all, { ...view, status: 'backlog' });
+}
+
+function pickOne(pool, currentId) {
+  // Niet dezelfde als nu, en liefst ook niet een van de laatste keuzes
+  const keep = Math.min(recentPicks.length, Math.floor(pool.length / 2));
+  const avoid = new Set([currentId, ...recentPicks.slice(-keep)]);
+  const fresh = pool.filter((g) => !avoid.has(g.id));
+  const from = fresh.length ? fresh : pool.filter((g) => g.id !== currentId);
+  const choice = (from.length ? from : pool)[Math.floor(Math.random() * (from.length || pool.length))];
+  recentPicks.push(choice.id);
+  if (recentPicks.length > 50) recentPicks.shift();
+  return choice;
+}
+
+function openPicker(ctx, all) {
+  const pool = pickPool(all);
+  if (!pool.length) {
+    const filtered = view.q || view.section || view.group || view.platform || view.year;
+    ctx.toast(filtered ? 'Geen backlog-games binnen deze filters' : 'Je backlog is leeg. Knap!', 'info');
+    return;
+  }
+  document.querySelector('dialog.gb-pick')?.close();
+
+  const filtersOn = [view.q && `"${view.q.trim()}"`, SECTION[view.section], view.group, view.platform, view.year].filter(Boolean);
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let current = null;
+  let spinTimer = null;
+
+  const stage = h('div', { class: 'gb-pick-stage', 'aria-live': 'polite' });
+  const rerollBtn = h('button', { type: 'button', class: 'btn', hidden: pool.length < 2, onClick: () => roll() }, diceIcon(), 'Andere suggestie');
+  const detailBtn = h('button', {
+    type: 'button', class: 'btn',
+    onClick: () => { const id = current.id; dlg.close(); openDetail(ctx, id); },
+  }, 'Bekijk details');
+  const playBtn = h('button', {
+    type: 'button', class: 'btn btn-primary',
+    onClick: async () => {
+      const g = current;
+      // Accolades: de mutator mag niets teruggeven (een returnwaarde wordt de nieuwe data)
+      await ctx.update((d) => { updateById(d.games, g.id, { status: 'playing' }); });
+      dlg.close();
+      ctx.toast(`Veel plezier met ${g.title}!`, 'ok');
+    },
+  }, '▶ Ga ik spelen');
+
+  const drawResult = (g) => {
+    const info = infoById.get(g.id);
+    const sc = mainScore(info);
+    stage.classList.remove('is-spinning');
+    stage.replaceChildren(
+      coverArt(g, info?.found ? info.image : '', { cls: 'gb-pick-cover', lazy: false }),
+      h('h3', { class: 'gb-pick-title' }, g.title),
+      h('div', { class: 'gb-pick-tags' },
+        ...(g.platforms || []).map((p) => h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(p) } }, platformIcon(p), p)),
+        ...(g.years || []).map((y) => h('span', { class: 'gb-tag gb-tag-year' }, String(y))),
+        sc ? h('span', {
+          class: 'gb-score gb-pick-score', dataset: { level: scoreLevel(sc.score), source: sc.source },
+          'aria-label': sc.source === 'mc' ? `Metascore ${sc.score}` : `GameRankings ${sc.score}%`,
+        }, String(sc.score)) : null),
+      g.group ? h('p', { class: 'gb-pick-group' }, `${SECTION[g.section] || ''} · ${g.group}`) : null);
+  };
+
+  function roll() {
+    clearInterval(spinTimer);
+    const choice = pickOne(pool, current?.id);
+    current = choice;
+    const buttons = [rerollBtn, detailBtn, playBtn];
+    if (calm || pool.length < 3) { drawResult(choice); return; }
+    // Korte "fruitautomaat": een paar titels voorbij laten flitsen
+    buttons.forEach((b) => { b.disabled = true; });
+    stage.classList.add('is-spinning');
+    const flash = h('p', { class: 'gb-pick-flash' });
+    stage.replaceChildren(h('div', { class: 'gb-cover gb-pick-cover gb-pick-blank' }), flash);
+    let n = 0;
+    spinTimer = setInterval(() => {
+      flash.textContent = pool[Math.floor(Math.random() * pool.length)].title;
+      if (++n >= 9) {
+        clearInterval(spinTimer);
+        drawResult(choice);
+        buttons.forEach((b) => { b.disabled = false; });
+      }
+    }, 70);
+  }
+
+  const dlg = h('dialog', { class: 'sheet gb-modal gb-pick', 'aria-labelledby': 'gb-pick-head' },
+    h('div', { class: 'sheet-header' },
+      h('h2', { id: 'gb-pick-head' }, 'Wat ga ik nu spelen?'),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Sluiten', onClick: () => dlg.close() }, '✕')),
+    h('div', { class: 'sheet-body gb-pick-body' },
+      stage,
+      h('p', { class: 'gb-pick-pool muted' },
+        `Gekozen uit ${pool.length} ${pool.length === 1 ? 'game' : 'games'} in je backlog`,
+        filtersOn.length ? ` (filter: ${filtersOn.join(', ')})` : ''),
+      h('div', { class: 'gb-pick-actions' }, playBtn, detailBtn, rerollBtn)));
+  dlg.addEventListener('close', () => { clearInterval(spinTimer); dlg.remove(); });
+  document.body.append(dlg);
+  dlg.showModal();
+  roll();
 }
 
 /* ---------- Bewerken ---------- */
