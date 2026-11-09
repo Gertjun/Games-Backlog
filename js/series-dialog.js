@@ -3,7 +3,8 @@
 // =============================================================
 // 1. Zoek een serie (bijvoorbeeld "Professor Layton").
 // 2. Je ziet alle games uit die serie, oudste eerst. Vink aan wat je wilt,
-//    kies eventueel een ander platform en pas de naam van de serie aan.
+//    tik op de platformlabels om te kiezen welke op de kaart komen, en pas
+//    eventueel de naam van de serie aan.
 // 3. Toevoegen: elke game krijgt een eigen kaart met status Backlog. Score en
 //    boxart worden daarna van de juiste Wikipedia-pagina opgehaald.
 
@@ -101,7 +102,10 @@ export function openSeriesImport(ctx, { onDone } = {}) {
     const mine = alive(ctx.data.games);
     const have = new Set(mine.map((g) => norm(g.title)));
     const groups = [...new Set(mine.map((g) => g.group?.trim()).filter(Boolean))];
-    const rows = games.map((g) => ({ ...g, owned: have.has(norm(g.title)), on: !have.has(norm(g.title)) }));
+    const rows = games.map((g) => ({
+      ...g, owned: have.has(norm(g.title)), on: !have.has(norm(g.title)),
+      platforms: new Set(g.platform ? [g.platform] : []),
+    }));
 
     const nameInput = h('input', {
       type: 'text', value: matchGroup(cleanSeriesName(series.label), groups), required: true,
@@ -118,20 +122,28 @@ export function openSeriesImport(ctx, { onDone } = {}) {
         type: 'checkbox', checked: r.on, 'aria-label': r.title,
         onChange: () => { r.on = box.checked; updateCount(); },
       });
-      const plat = r.options.length > 1
-        ? h('select', {
-          class: 'gb-series-plat', 'aria-label': `Platform voor ${r.title}`,
-          onChange: (e) => { r.platform = e.target.value; },
-        }, r.options.map((p) => h('option', { value: p, selected: p === r.platform }, p)))
-        : r.platform ? h('span', { class: 'gb-tag gb-ptag', dataset: { platform: platformKey(r.platform) } }, platformIcon(r.platform), r.platform)
-          : null;
+      // Platformlabels: alle platforms waarop de game is verschenen. Tik om te
+      // kiezen welke op de kaart komen; het oorspronkelijke platform staat aan.
+      const tags = r.options.length ? h('div', { class: 'gb-series-tags', role: 'group', 'aria-label': `Platforms van ${r.title}` },
+        r.options.map((p) => {
+          const tag = h('button', {
+            type: 'button', class: 'gb-tag gb-ptag gb-series-ptag', dataset: { platform: platformKey(p) },
+            'aria-pressed': String(r.platforms.has(p)),
+            title: r.options.length > 1 ? 'Tik om dit platform op de kaart te zetten of weg te halen' : null,
+            onClick: () => {
+              if (r.platforms.has(p)) r.platforms.delete(p); else r.platforms.add(p);
+              tag.setAttribute('aria-pressed', String(r.platforms.has(p)));
+            },
+          }, platformIcon(p), p);
+          return tag;
+        })) : null;
       return h('li', { class: 'gb-series-game' },
         h('label', { class: 'gb-series-check' }, box,
           h('span', { class: 'gb-series-gtitle' }, r.title),
           h('span', { class: 'gb-series-gmeta muted' },
             r.year ? String(r.year) : 'jaar onbekend',
             r.owned ? ' · staat al in je lijst' : '')),
-        plat);
+        tags);
     }));
     const setAll = (on) => {
       rows.forEach((r) => { r.on = on; });
@@ -148,7 +160,7 @@ export function openSeriesImport(ctx, { onDone } = {}) {
           h('button', { type: 'button', class: 'btn btn-small', onClick: () => setAll(true) }, 'Alles'),
           h('button', { type: 'button', class: 'btn btn-small', onClick: () => setAll(false) }, 'Niets'))),
       list,
-      h('p', { class: 'muted gb-form-hint' }, 'Platform en jaar komen van Wikidata. Klopt iets niet, pas het dan later aan bij Bewerken.'),
+      h('p', { class: 'muted gb-form-hint' }, 'Platform en jaar komen van Wikidata. Tik op een platform om het op de kaart te zetten of weg te halen; gekleurd = komt op de kaart.'),
       h('div', { class: 'button-row gb-form-actions' },
         h('button', { type: 'button', class: 'btn', onClick: () => showSearch(query) }, 'Terug'),
         addBtn));
@@ -161,7 +173,7 @@ export function openSeriesImport(ctx, { onDone } = {}) {
       if (!group || !chosen.length) return;
       await ctx.update((d) => {
         for (const r of chosen) {
-          const platforms = r.platform ? [r.platform] : [];
+          const platforms = r.options.filter((p) => r.platforms.has(p));
           const rec = newRecord({
             title: r.title, section: sectionFor(platforms, r.year || 0), group,
             platforms, years: r.year ? [r.year] : [], status: 'backlog',

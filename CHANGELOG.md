@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.22.0
+
+- **Platformlabels bij Hele serie toevoegen:** in de lijst met games staan nu labels voor alle platforms waarop een game is verschenen, met dezelfde kleuren en icoontjes als op je kaarten. Het keuzemenu is weg.
+  - Het oorspronkelijke platform staat aan (gekleurd). De andere platforms zijn omlijnd.
+  - Tik op een label om dat platform op de kaart te zetten of weg te halen. Je kunt er ook meer dan één kiezen.
+
 ## 1.21.1
 
 - **iPad: ruimte bovenin.** In de app op het beginscherm van de iPad schoof de kopbalk onder de statusbalk met de vervaging. Er is nu bovenin altijd minstens zoveel ruimte als de statusbalk hoog is, net als op de iPhone. Dat geldt staand en liggend, en ook voor het detailscherm van een game.
