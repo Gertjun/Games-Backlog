@@ -1016,3 +1016,41 @@ dialog.settings-sheet[data-mode="page"][open] { display: block; }
 .gb-check-field input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .gb-check-field input[type="number"]::-webkit-inner-spin-button,
 .gb-check-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- Hele serie toevoegen ---------- */
+.gb-series-cta {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px;
+  width: 100%; min-height: 56px; margin: 0 0 16px; padding: 10px 14px;
+  text-align: left; font: inherit; color: var(--text); cursor: pointer;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: 12px;
+}
+.gb-series-cta:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.gb-series-cta-title { font-weight: 600; }
+.gb-series-cta-sub { grid-column: 1; font-size: 0.875rem; }
+.gb-series-cta-arrow { grid-column: 2; grid-row: 1 / span 2; font-size: 1.5rem; color: var(--accent); }
+.gb-series-intro { margin: 0 0 12px; }
+.gb-series-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.gb-series-search input { flex: 1; min-width: 0; font-size: 16px; }
+.gb-series-list, .gb-series-games { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+.gb-series-list li + li, .gb-series-games li + li { border-top: 1px solid var(--border); }
+.gb-series-pick {
+  display: grid; gap: 2px; width: 100%; min-height: 48px; padding: 10px 14px;
+  text-align: left; font: inherit; color: var(--text); background: none; border: 0; cursor: pointer;
+}
+.gb-series-pick:hover { background: var(--surface-2); }
+.gb-series-name { font-weight: 600; }
+.gb-series-desc { font-size: 0.875rem; }
+.gb-series-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.875rem; }
+.gb-series-all { display: flex; gap: 6px; }
+.gb-series-game { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 0; }
+.gb-series-check {
+  flex: 1; min-width: 0; min-height: 44px; padding-left: 12px;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; cursor: pointer;
+}
+.gb-series-check input { width: 20px; height: 20px; margin: 0; grid-row: 1 / span 2; accent-color: var(--accent); }
+.gb-series-gtitle { font-weight: 500; overflow-wrap: anywhere; }
+.gb-series-gmeta { font-size: 0.8125rem; }
+.gb-series-plat { flex: none; width: auto; max-width: 40%; min-height: 36px; font-size: 16px; }
+.gb-series-form .gb-form-actions .btn:first-child { margin-right: auto; }
+.gb-series-form .btn-primary[disabled] { opacity: 0.5; cursor: default; }

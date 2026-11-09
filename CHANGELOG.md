@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.21.0
+
+- **Zes nieuwe series:** games die bij elkaar horen staan niet meer los onder Overig, maar in hun eigen serie: *Mass Effect* (1, 2, 3), *Horizon* (Zero Dawn Remastered, Forbidden West), *The Last of Us* (Part 1, Part 2), *Star Wars Jedi* (Fallen Order, Survivor), *Mafia* (Definitive Edition, The Old Country) en *Chrono* (Trigger, Cross). Games waar je zelf al een serie had ingevuld, blijven zoals ze zijn.
+- **Hele serie in één keer toevoegen:** tik op **+** en kies bovenaan **Hele serie toevoegen**. Zoek een serie, bijvoorbeeld *Professor Layton*, en je ziet alle games daaruit, oudste eerst.
+  - Vink aan welke games je wilt. Games die al in je lijst staan, zijn niet aangevinkt.
+  - Per game staat het oorspronkelijke platform voorgesteld. Heeft een game meer platforms, dan kies je er een uit het keuzemenu.
+  - De naam van de serie kun je aanpassen. Heb je al een serie met dezelfde naam (zoals *Zelda* bij *The Legend of Zelda*), dan wordt die gebruikt.
+  - Alle games komen in je Backlog, met het jaar erbij. Score en boxart worden daarna van de juiste Wikipedia-pagina opgehaald.
+  - De lijst komt van Wikidata. Ontbreekt er een game, voeg die dan gewoon los toe met dezelfde serienaam.
+- Een apparaat met een oudere versie vraagt eerst om bij te werken voordat je daar weer kunt bewerken.
+
 ## 1.20.0
 
 - **Geen serie "PlayStation 5" meer:** PlayStation 5 is een console, geen serie. Die games staan nu onder **Overig**, samen met de andere losse games die niet bij een serie horen. Ze blijven wel Modern, dus met het filter Categorie → Modern zie je ze nog apart.

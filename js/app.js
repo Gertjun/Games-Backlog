@@ -25,12 +25,14 @@ import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
 import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
 import { applyCorrections } from './corrections.js';
+import { assignKnownSeries } from './series.js';
+import { openSeriesImport } from './series-dialog.js';
 import { currentScreen, onScreenChange, setCheckCount } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 7;
+const SCHEMA = 8;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -126,7 +128,9 @@ export const app = {
       rating: 0, playedOn: '', finished: '', notes: '',
       ...withTitleInfo({ title, platforms }),
     }));
-    return applyCorrections({ schema: SCHEMA, games: splitSeedVersions(games, splitTitle), gameInfo: [] });
+    const data = applyCorrections({ schema: SCHEMA, games: splitSeedVersions(games, splitTitle), gameInfo: [] });
+    assignKnownSeries(data.games, 1);
+    return data;
   },
 
   migrate(data) {
@@ -159,6 +163,9 @@ export const app = {
         if (!g.deleted && g.group === 'PlayStation 5') Object.assign(g, { group: NO_SERIES, updatedAt: now });
       }
     }
+    // Schema 8: losse games uit Overig die samen een serie vormen, krijgen die
+    // serie (Mass Effect, Horizon, The Last of Us, Star Wars Jedi, Mafia, Chrono).
+    if ((data.schema || 0) < 8) assignKnownSeries(data.games, Date.now());
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -786,7 +793,14 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
       h('h2', { id: 'gb-edit-title' }, id ? 'Game bewerken' : base ? 'Versie toevoegen' : 'Game toevoegen'),
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Sluiten', onClick: () => close() }, '✕')),
     h('div', { class: 'sheet-body' },
-      base ? h('p', { class: 'gb-form-hint muted' }, `Een eigen kaart, gekoppeld aan ${base.title}.`) : null, form));
+      base ? h('p', { class: 'gb-form-hint muted' }, `Een eigen kaart, gekoppeld aan ${base.title}.`) : null,
+      !id && !base ? h('button', {
+        type: 'button', class: 'gb-series-cta',
+        onClick: () => { close(); openSeriesImport(ctx); },
+      }, h('span', { class: 'gb-series-cta-title' }, 'Hele serie toevoegen'),
+        h('span', { class: 'gb-series-cta-sub muted' }, 'Bijvoorbeeld alle Professor Layton-games in één keer'),
+        h('span', { class: 'gb-series-cta-arrow', 'aria-hidden': 'true' }, '›')) : null,
+      form));
   function close() { dlg.close(); }
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);

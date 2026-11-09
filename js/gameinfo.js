@@ -12,7 +12,7 @@
 //   loadDetails(candidate) → boxart, samenvatting, genre, Metacritic, …
 
 const WIKI = (lang) => `https://${lang}.wikipedia.org/w/api.php`;
-const WIKIDATA = 'https://www.wikidata.org/w/api.php';
+export const WIKIDATA = 'https://www.wikidata.org/w/api.php';
 const IMAGE_HOST = 'https://upload.wikimedia.org/';
 const TIMEOUT_MS = 15_000;
 
@@ -28,7 +28,7 @@ const detailCache = new Map(); // pageid → Promise<details>
 
 /* ---------- Hulpfuncties ---------- */
 
-async function api(base, params, signal) {
+export async function api(base, params, signal) {
   const url = new URL(base);
   url.search = new URLSearchParams({ format: 'json', formatversion: '2', origin: '*', ...params });
   const res = await fetch(url, { signal, credentials: 'omit' });
@@ -39,7 +39,7 @@ async function api(base, params, signal) {
 }
 
 /** Combineert het signaal van de aanroeper met een time-out. */
-function withTimeout(signal) {
+export function withTimeout(signal) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(new DOMException('Time-out', 'TimeoutError')), TIMEOUT_MS);
   signal?.addEventListener('abort', () => ctrl.abort(signal.reason), { once: true });
