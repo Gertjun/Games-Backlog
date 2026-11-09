@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.13.0
+
+- Bovenaan staat nu het app-icoon naast de naam, en onder de naam zie je welke versie je gebruikt (bijvoorbeeld v1.13.0). Net als in Vaste Lasten. De kopbalk is even hoog gebleven.
+
 ## 1.12.0
 
 - In de zijbalk (laptop, iPad liggend) is de status nu ook een uitklapmenu, net als de andere filters. De losse statusknoppen zijn daar weg.

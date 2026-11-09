@@ -65,6 +65,7 @@ body { background-color: var(--bg); }
   color: transparent;
   font-weight: 800;
 }
+.app-brand-icon { box-shadow: 0 2px 8px rgb(91 92 240 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.06); }
 .auth-logo, .privacy-cover img {
   border-radius: 22%;
   box-shadow: 0 10px 30px rgb(91 92 240 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.06);

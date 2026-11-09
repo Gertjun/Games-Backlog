@@ -72,6 +72,7 @@ export async function start() {
   $$('[data-app-name]').forEach((el) => { el.textContent = APP.name; });
   $$('[data-min-length]').forEach((el) => { el.textContent = APP.minPasswordLength; });
   $('#app-version').textContent = APP.version;
+  $$('[data-app-version]').forEach((el) => { el.textContent = `v${APP.version}`; });
   // Helpt wachtwoordmanagers het wachtwoord aan deze app te koppelen.
   $$('input[name=username]').forEach((el) => el.setAttribute('value', APP.name));
 

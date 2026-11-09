@@ -117,7 +117,17 @@ a { color: var(--accent); }
   justify-content: space-between;
   gap: 12px;
 }
+/* Titel: app-icoon met daarnaast de naam en daaronder het versienummer.
+   Blijft lager dan de knoppen (--tap), zodat de kopbalk even hoog blijft. */
+.app-brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0; font-size: inherit; }
+.app-brand-icon { flex: none; width: 36px; height: 36px; border-radius: 22%; }
+.app-brand-text { display: grid; min-width: 0; line-height: 1.15; }
 .app-title { font-size: 1.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-brand-version {
+  font: 500 0.7rem/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--muted);
+}
+.app-brand-version:empty { display: none; }
 .header-actions { display: flex; gap: 2px; }
 
 .app-main {
