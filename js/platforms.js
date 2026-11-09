@@ -72,3 +72,16 @@ export function platformIcon(p) {
   }
   return svg;
 }
+
+// Volgorde van de platforms in de weergave Per platform: op jaar van
+// verschijnen van de console. Pc staat achteraan; onbekende platforms
+// daarna op alfabet.
+const ORDER = [
+  'NES', 'PCE', 'Genesis', 'GB', 'SNES', 'PS1', 'N64', 'GBC', 'PS2', 'GBA', 'GC', 'Xbox',
+  'NDS', 'PSP', 'Xbox 360', 'Wii', 'PS3', '3DS', 'PS Vita', 'Wii U', 'PS4', 'Xbox One',
+  'Switch', 'PS5', 'Xbox Series', 'Switch 2', 'PC',
+];
+export const platformRank = (p) => {
+  const i = ORDER.indexOf(p);
+  return i < 0 ? ORDER.length : i;
+};

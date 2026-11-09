@@ -22,7 +22,7 @@ import { h, today } from './core/dom.js';
 import { dropdown } from './dropdown.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
-import { platformIcon, platformKey } from './platforms.js';
+import { platformIcon, platformKey, platformRank } from './platforms.js';
 import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
 import { applyCorrections } from './corrections.js';
 import { assignKnownSeries } from './series.js';
@@ -48,7 +48,8 @@ const SECTION = { modern: 'Modern', retro: 'Retro' };
 const NO_SERIES = 'Overig';
 
 // Filters gelden alleen voor deze sessie (niet opgeslagen buiten de kluis).
-// grouped: per serie tonen of als één lijst; sort geldt binnen elke serie.
+// grouped: per serie, per platform, als één lijst of als boxart-muur;
+// sort geldt binnen elke groep.
 const view = { q: '', status: '', section: '', group: '', platform: '', year: '', grouped: 'yes', sort: 'list' };
 
 const collator = new Intl.Collator('nl', { numeric: true, sensitivity: 'base' });
@@ -251,7 +252,7 @@ export const app = {
         menu('platform', 'Platform', () => [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])], countFor('platform')),
         menu('year', 'Jaar van release', () => [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])], countFor('year')))),
       group('view', 'Weergave',
-        menu('grouped', 'Weergave', () => [['yes', 'Per serie'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
+        menu('grouped', 'Weergave', () => [['yes', 'Per serie'], ['platform', 'Per platform'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
       group('sort', 'Sorteren',
         menu('sort', 'Sorteren', () => [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']])));
 
@@ -407,6 +408,10 @@ function renderList(el, all, ctx) {
     el.replaceChildren(h('ul', { class: 'gb-wall', 'aria-label': 'Boxart-muur' }, sortGames(filtered).map((g) => wallTile(g, ctx))));
     return;
   }
+  if (view.grouped === 'platform') {
+    renderByPlatform(el, filtered, ctx);
+    return;
+  }
   if (view.grouped !== 'yes') {
     el.replaceChildren(h('ul', { class: 'card gb-games' }, sortGames(filtered).map((g) => gameRow(g, ctx))));
     return;
@@ -426,6 +431,29 @@ function renderList(el, all, ctx) {
   el.replaceChildren(...ordered.map(([name, { items }]) => h('section', { class: 'gb-group' },
     h('h2', { class: 'gb-group-head' },
       h('span', {}, name),
+      h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
+    h('ul', { class: 'card gb-games' }, sortGames(items, true).map((g) => gameRow(g, ctx))))));
+}
+
+// Per platform: één kop per console, op volgorde van verschijnen (NES eerst).
+// Een game op meer platforms staat onder elk van die platforms. Games zonder
+// platform staan onderaan onder "Geen platform".
+const NO_PLATFORM = 'Geen platform';
+function renderByPlatform(el, filtered, ctx) {
+  const groups = new Map();
+  for (const g of filtered) {
+    const list = (g.platforms || []).filter(Boolean);
+    for (const p of list.length ? [...new Set(list)] : [NO_PLATFORM]) {
+      if (!groups.has(p)) groups.set(p, []);
+      groups.get(p).push(g);
+    }
+  }
+  const rank = (p) => (p === NO_PLATFORM ? Infinity : platformRank(p));
+  const ordered = [...groups].sort(([a], [b]) => rank(a) - rank(b) || collator.compare(a, b));
+  el.replaceChildren(...ordered.map(([name, items]) => h('section', { class: 'gb-group' },
+    h('h2', { class: 'gb-group-head' },
+      h('span', { class: 'gb-group-plat', dataset: name === NO_PLATFORM ? {} : { platform: platformKey(name) } },
+        name === NO_PLATFORM ? null : platformIcon(name), name),
       h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
     h('ul', { class: 'card gb-games' }, sortGames(items, true).map((g) => gameRow(g, ctx))))));
 }

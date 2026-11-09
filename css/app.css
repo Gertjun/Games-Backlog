@@ -131,6 +131,10 @@ body { background-color: var(--bg); }
 }
 .gb-group-count { font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; }
 .gb-group + .gb-group { margin-top: 16px; }
+.gb-group-plat { --pc: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
+.gb-group-plat[data-platform] { color: color-mix(in srgb, var(--pc) 72%, var(--text)); }
+.gb-group-plat .gb-picon { width: 16px; height: 16px; }
+.gb-group-head:has(.gb-group-plat) { align-items: center; }
 .gb-games { list-style: none; margin: 0; padding: 0; overflow: hidden; }
 
 .gb-game { display: flex; align-items: center; gap: 4px; padding-left: 8px; }

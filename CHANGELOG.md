@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.23.0
+
+- **Nieuwe weergave: Per platform.** Kies bij Weergave voor *Per platform* en je ziet je games gegroepeerd per console, met het icoontje en de kleur van dat platform in de kop.
+  - De platforms staan op volgorde van verschijnen: NES eerst, daarna onder andere SNES, PS1, GBA en NDS, tot PS5. Pc staat achteraan.
+  - Staat een game op meer platforms, bijvoorbeeld NES en GBA, dan zie je hem onder elk van die platforms.
+  - Games zonder platform staan onderaan onder *Geen platform*.
+  - Net als bij *Per serie* zie je rechts per platform hoeveel games je hebt uitgespeeld. Filters en sorteren werken binnen elke groep.
+
 ## 1.22.0
 
 - **Platformlabels bij Hele serie toevoegen:** in de lijst met games staan nu labels voor alle platforms waarop een game is verschenen, met dezelfde kleuren en icoontjes als op je kaarten. Het keuzemenu is weg.
