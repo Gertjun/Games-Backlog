@@ -851,9 +851,15 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 }
 
 /* ---------- Navigatie: Overzicht, Controle, Instellingen (js/nav.js) ----------
-   iPhone en iPad staand: tabbalk onderin.
-   Vanaf 1000px (iPad liggend, laptop): smalle balk links over de volle hoogte. */
+   iPhone en iPad staand: tabbalk onderin; het app-icoon met naam en versie
+   staat in de kopbalk.
+   Vanaf 1000px (iPad liggend, laptop): zijbalk links over de volle hoogte,
+   met bovenaan het app-icoon, de naam en de versie. De kopbalk toont dan de
+   titel van het huidige scherm. */
 .app-nav { position: fixed; z-index: 20; display: flex; }
+.app-nav-brand { display: none; }
+.app-nav-items { display: contents; }
+.app-screen-title { display: none; }
 .app-nav-btn {
   position: relative; display: grid; justify-items: center; align-content: center; gap: 3px;
   min-height: var(--tap); padding: 6px 4px; border: 0; border-radius: 12px; cursor: pointer;
@@ -891,18 +897,47 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 }
 
 @media (min-width: 1000px) {
-  #screen-app { --rail: 88px; }
+  /* --head: hoogte van de kopbalk, zodat de onderrand van het blok bovenaan
+     de zijbalk precies doorloopt in die van de kopbalk. */
+  #screen-app { --rail: 216px; --head: calc(61px + var(--safe-top)); }
   .app-nav {
-    top: 0; left: 0; bottom: 0; width: var(--rail); box-sizing: border-box;
-    flex-direction: column; gap: 6px;
-    padding: calc(76px + var(--safe-top)) 10px calc(16px + var(--safe-bottom)) calc(10px + var(--safe-left));
+    top: 0; left: 0; bottom: 0; width: calc(var(--rail) + var(--safe-left)); box-sizing: border-box;
+    flex-direction: column;
+    padding: 0 0 calc(16px + var(--safe-bottom)) var(--safe-left);
     background: color-mix(in srgb, var(--surface) 55%, var(--bg));
     border-right: 1px solid var(--border);
   }
-  .app-nav-btn { padding: 10px 4px; font-size: 0.72rem; }
+  .app-nav-brand {
+    display: flex; align-items: center; gap: 10px; flex: none; min-width: 0;
+    height: var(--head); box-sizing: border-box;
+    padding: calc(8px + var(--safe-top)) 12px 8px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-nav-brand .app-title { font-size: 1.05rem; }
+  .app-nav-items { display: grid; gap: 4px; padding: 12px 10px; align-content: start; }
+  .app-nav-btn {
+    grid-template-columns: 24px minmax(0, 1fr) auto; justify-items: start; align-items: center;
+    gap: 12px; padding: 8px 12px; font-size: 0.95rem; text-align: left;
+  }
+  .app-nav-badge { position: static; justify-self: end; }
   .app-nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--accent) 15%, transparent); }
-  .app-header { padding-left: calc(var(--rail) + 16px + var(--safe-left)); }
+
+  .app-header { height: var(--head); box-sizing: border-box; padding-left: calc(var(--rail) + 16px + var(--safe-left)); }
+  .app-header .app-brand { display: none; }
+  .app-screen-title {
+    display: block; flex: 1; min-width: 0; margin: 0;
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .app-main { max-width: calc(1480px + var(--rail)); padding-left: calc(var(--rail) + 16px + var(--safe-left)); }
+
+  /* De schermtitel staat nu in de kopbalk: de kop in de inhoud blijft er
+     alleen voor schermlezers. */
+  .gb-check-title,
+  .settings-sheet[data-mode="page"] .sheet-header {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
 }
 @media (min-width: 1000px) and (hover: hover) {
   .app-nav-btn:hover:not([aria-current]) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); color: var(--text); }

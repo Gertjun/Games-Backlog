@@ -1,7 +1,9 @@
 // =============================================================
 //  Navigatie tussen de schermen: Overzicht, Controle en Instellingen
 // -------------------------------------------------------------
-//  Laptop en iPad liggend (vanaf 1000px): een smalle balk links.
+//  Laptop en iPad liggend (vanaf 1000px): een zijbalk links met bovenaan
+//  het app-icoon, de naam en de versie; de kopbalk toont dan de titel van
+//  het huidige scherm.
 //  iPhone en iPad staand: een tabbalk onderin.
 //  Het is één <nav>; de CSS (app.css, "Navigatie") bepaalt de vorm.
 //
@@ -11,6 +13,7 @@
 //  Dit bestand raakt geen gegevens aan.
 // =============================================================
 import { h } from './core/dom.js';
+import { APP } from './config.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ICONS = {
@@ -51,12 +54,25 @@ const buttons = SCREENS.map((s) => h('button', {
 }, navIcon(ICONS[s.id]), h('span', { class: 'app-nav-label' }, s.label),
 s.id === 'check' ? h('span', { class: 'app-nav-badge', hidden: true }) : null));
 
-const nav = h('nav', { class: 'app-nav', 'aria-label': 'Schermen' }, buttons);
+// Bovenaan de zijbalk (vanaf 1000px): app-icoon met naam en versie.
+// Op smallere schermen staat dit in de kopbalk en is dit blok verborgen.
+const brand = h('div', { class: 'app-nav-brand' },
+  h('img', { src: 'icons/icon-192.png', alt: '', class: 'app-brand-icon', width: 36, height: 36 }),
+  h('span', { class: 'app-brand-text' },
+    h('span', { class: 'app-title' }, APP.name),
+    h('span', { class: 'app-brand-version' }, `v${APP.version}`)));
+
+const nav = h('nav', { class: 'app-nav', 'aria-label': 'Schermen' }, brand,
+  h('div', { class: 'app-nav-items' }, buttons));
 appEl?.append(nav);
+
+// Titel van het huidige scherm in de kopbalk (vanaf 1000px zichtbaar)
+const titleEl = document.querySelector('[data-screen-title]');
 
 function show(id) {
   current = id;
   if (appEl) appEl.dataset.screen = id;
+  if (titleEl) titleEl.textContent = SCREENS.find((s) => s.id === id)?.label ?? '';
   for (const b of buttons) {
     if (b.dataset.screen === id) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');

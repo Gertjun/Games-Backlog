@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.0
+
+- **Laptop en iPad liggend:** de balk links is nu een volwaardige zijbalk. Bovenaan staat het app-icoon met de naam en het versienummer, daaronder de schermen Overzicht, Controle en Instellingen, elk met icoon en naam naast elkaar.
+- De kopbalk bovenin toont daar nu de titel van het scherm waar je bent (Overzicht, Controle of Instellingen). De knoppen voor synchroniseren en vergrendelen staan nog rechtsboven.
+- Op de iPhone en iPad staand verandert er niets.
+
 ## 1.16.0
 
 - **Nieuwe indeling met drie schermen: Overzicht, Controle en Instellingen.** Op de laptop en iPad (liggend) kies je ze in een smalle balk links. Op de iPhone en iPad (staand) staan ze in een tabbalk onderin. Het tandwiel rechtsboven is weg.
