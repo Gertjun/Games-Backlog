@@ -5,6 +5,16 @@
 /* Accentkleur. Wordt ingesteld door de workflow "Nieuwe app instellen"
    (tools/setup.mjs); handmatig wijzigen mag ook (dan ook theme_color in
    manifest.webmanifest aanpassen). */
+/* Veiligheidsmarge bovenin op de iPad (beginscherm-app). Op de iPhone geeft
+   iOS zelf een ruime safe-area door de notch. Op de iPad is die vaak 0,
+   terwijl de statusbalk met zijn vervaging er wel overheen ligt. Daarom
+   minimaal de hoogte van de iPad-statusbalk (24px). Alleen bij een
+   aanraakscherm in een hoog venster, dus niet op de iPhone in liggende
+   stand en niet op de laptop. */
+@media (display-mode: standalone) and (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
+  :root { --safe-top: max(env(safe-area-inset-top, 0px), 24px); }
+}
+
 /* @accent-start */
 :root {
   --accent: #5b5cf0;

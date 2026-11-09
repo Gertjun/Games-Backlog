@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.21.1
+
+- **iPad: ruimte bovenin.** In de app op het beginscherm van de iPad schoof de kopbalk onder de statusbalk met de vervaging. Er is nu bovenin altijd minstens zoveel ruimte als de statusbalk hoog is, net als op de iPhone. Dat geldt staand en liggend, en ook voor het detailscherm van een game.
+- Op de iPhone, op de laptop en in Safari zelf verandert er niets.
+
 ## 1.21.0
 
 - **Zes nieuwe series:** games die bij elkaar horen staan niet meer los onder Overig, maar in hun eigen serie: *Mass Effect* (1, 2, 3), *Horizon* (Zero Dawn Remastered, Forbidden West), *The Last of Us* (Part 1, Part 2), *Star Wars Jedi* (Fallen Order, Survivor), *Mafia* (Definitive Edition, The Old Country) en *Chrono* (Trigger, Cross). Games waar je zelf al een serie had ingevuld, blijven zoals ze zijn.
