@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.18.0
+
+- **Zelf de juiste Wikipedia-pagina kiezen:** onder "Niet de juiste game?" staat nu een veld waarin je een Wikipedia-link plakt (bijvoorbeeld van *Assassin's Creed Shadows*) of de titel typt. Een link of exacte titel wordt meteen gebruikt en vastgezet; met een andere zoekterm krijg je een nieuwe lijst om uit te kiezen. Links naar de Nederlandse Wikipedia werken ook.
+- "Niet de juiste game?" toont nu tot 10 zoekresultaten in plaats van 5.
+
 ## 1.17.0
 
 - **Laptop en iPad liggend:** de balk links is nu een volwaardige zijbalk. Bovenaan staat het app-icoon met de naam en het versienummer, daaronder de schermen Overzicht, Controle en Instellingen, elk met icoon en naam naast elkaar.

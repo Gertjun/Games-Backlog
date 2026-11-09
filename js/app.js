@@ -23,7 +23,7 @@ import { dropdown } from './dropdown.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey } from './platforms.js';
-import { findCandidates, findPage, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
+import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
 import { applyCorrections } from './corrections.js';
 import { currentScreen, onScreenChange, setCheckCount } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
@@ -831,6 +831,7 @@ function openDetail(ctx, id, opts = {}) {
   const s = {
     loading: true, error: '', core: null, summary: null, candidates: [],
     picker: false, pickerLoading: false, expanded: false, linking: false,
+    manual: '', manualResults: null, manualLoading: false,
   };
   let run = 0;
 
@@ -858,7 +859,7 @@ function openDetail(ctx, id, opts = {}) {
     if (!g) { dlg.close(); return; }
     heroEl.classList.remove('no-image');
     heroEl.replaceChildren(...detailHero(g, s, img).filter(Boolean));
-    bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw, openPicker }).filter(Boolean));
+    bodyEl.replaceChildren(...detailBody(g, s, { ctx, load, redraw: draw, openPicker, lookup }).filter(Boolean));
   };
 
   /** Laadt de game; met `pick` een zelf gekozen Wikipedia-pagina. */
@@ -918,6 +919,33 @@ function openDetail(ctx, id, opts = {}) {
       draw();
       s.candidates = await findCandidates(findById(ctx.data.games, id), ctrl.signal).catch(() => []);
       s.pickerLoading = false;
+    }
+    draw();
+  }
+
+  /** Zelf ingevoerde Wikipedia-link of titel opzoeken. */
+  async function lookup(text) {
+    s.manual = text;
+    if (!text.trim()) return;
+    s.manualLoading = true;
+    s.manualResults = null;
+    draw();
+    try {
+      const found = await lookupInput(text, ctrl.signal);
+      if (ctrl.signal.aborted) return;
+      s.manualLoading = false;
+      // Precies één pagina (een link of exacte titel): meteen gebruiken
+      if (found.length === 1 && found[0].score >= 10) {
+        s.manual = '';
+        s.expanded = false;
+        load(found[0]);
+        return;
+      }
+      s.manualResults = found;
+    } catch {
+      if (ctrl.signal.aborted) return;
+      s.manualLoading = false;
+      s.manualResults = 'error';
     }
     draw();
   }
@@ -1101,7 +1129,7 @@ function versionsSection(g, s, ctx, redraw) {
     s.linking ? h('div', { class: 'gb-v-link' }, search, results) : null);
 }
 
-function detailBody(g, s, { ctx, load, redraw, openPicker }) {
+function detailBody(g, s, { ctx, load, redraw, openPicker, lookup }) {
   const parts = [h('div', { class: 'gb-d-tiles' }, scoreCard(s, g), progressCard(g, ctx)), versionsSection(g, s, ctx, redraw)];
   const core = s.core;
   const skeleton = (label) => h('section', { class: 'card gb-d-section', 'aria-busy': 'true', 'aria-label': label },
@@ -1168,6 +1196,13 @@ function detailBody(g, s, { ctx, load, redraw, openPicker }) {
   // Bron, links en een andere pagina kiezen als de match niet klopt
   const others = s.candidates.filter((c) => c.pageid !== core?.pageid);
   const ext = (href, text) => h('a', { class: 'gb-d-link', href, target: '_blank', rel: 'noopener noreferrer' }, text, icon(ICON.external));
+  const pickerList = (list) => h('ul', { class: 'card gb-d-picker' }, list.map((c) => h('li', {},
+    h('button', {
+      type: 'button',
+      onClick: () => { s.expanded = false; s.manual = ''; s.manualResults = null; load(c); },
+    },
+    c.thumb ? h('img', { src: c.thumb, alt: '', class: 'gb-d-pthumb', referrerpolicy: 'no-referrer' }) : h('span', { class: 'gb-d-pthumb' }),
+    h('span', { class: 'gb-d-ptext' }, h('strong', {}, c.title), c.description ? h('span', {}, c.description) : null)))));
   parts.push(h('footer', { class: 'gb-d-foot' },
     h('div', { class: 'gb-d-links' },
       core ? ext(s.summary?.url || coreWikiUrl(core), 'Wikipedia') : null,
@@ -1177,16 +1212,41 @@ function detailBody(g, s, { ctx, load, redraw, openPicker }) {
       type: 'button', class: 'gb-d-more', 'aria-expanded': String(s.picker), onClick: openPicker,
     }, core ? 'Niet de juiste game?' : 'Zelf een pagina kiezen'),
     s.picker && s.pickerLoading ? h('p', { class: 'gb-d-note' }, 'Zoeken…') : null,
-    s.picker && !s.pickerLoading ? (others.length ? h('ul', { class: 'card gb-d-picker' }, others.map((c) => h('li', {},
-      h('button', {
-        type: 'button',
-        onClick: () => { s.expanded = false; load(c); },
-      },
-      c.thumb ? h('img', { src: c.thumb, alt: '', class: 'gb-d-pthumb', referrerpolicy: 'no-referrer' }) : h('span', { class: 'gb-d-pthumb' }),
-      h('span', { class: 'gb-d-ptext' }, h('strong', {}, c.title), c.description ? h('span', {}, c.description) : null))))) : h('p', { class: 'gb-d-note' }, 'Geen andere resultaten gevonden.')) : null,
+    s.picker && !s.pickerLoading ? (others.length ? pickerList(others) : h('p', { class: 'gb-d-note' }, 'Geen andere resultaten gevonden.')) : null,
+    s.picker && !s.pickerLoading ? manualLookup(s, lookup, pickerList, core) : null,
     h('p', { class: 'gb-d-source' }, 'Informatie en boxart: Wikipedia en Wikidata.')));
 
   return parts;
+}
+
+/** Zelf een Wikipedia-link of titel invoeren onder de zoekresultaten. */
+function manualLookup(s, lookup, pickerList, core) {
+  const input = h('input', {
+    type: 'text', class: 'gb-search', value: s.manual, inputmode: 'url', autocomplete: 'off', autocapitalize: 'off',
+    spellcheck: 'false', enterkeyhint: 'search', id: 'gb-d-manual',
+    placeholder: 'https://en.wikipedia.org/wiki/…',
+    onInput: (e) => { s.manual = e.target.value; },
+  });
+  const res = s.manualResults;
+  const shown = Array.isArray(res) ? res.filter((c) => c.pageid !== core?.pageid) : [];
+  let after = null;
+  if (s.manualLoading) after = h('p', { class: 'gb-d-note' }, 'Zoeken…');
+  else if (res === 'error') {
+    after = h('p', { class: 'gb-d-note' }, navigator.onLine
+      ? 'Zoeken lukte niet. Probeer het later nog eens.' : 'Je bent offline.');
+  } else if (Array.isArray(res)) {
+    after = shown.length ? pickerList(shown) : h('p', { class: 'gb-d-note' }, res.length
+      ? 'Dat is de pagina die nu al gebruikt wordt.' : 'Geen pagina gevonden. Controleer de link of de titel.');
+  }
+  return h('form', {
+    class: 'gb-d-manual',
+    onSubmit: (e) => { e.preventDefault(); lookup(input.value); },
+  },
+  h('label', { for: 'gb-d-manual', class: 'gb-d-note' }, 'Staat de juiste game er niet bij? Plak de Wikipedia-link of typ de titel.'),
+  h('div', { class: 'gb-d-manual-row' },
+    input,
+    h('button', { type: 'submit', class: 'btn', disabled: s.manualLoading }, 'Zoeken')),
+  after);
 }
 
 const norm = (t) => String(t || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, '');

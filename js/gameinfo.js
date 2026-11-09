@@ -8,6 +8,7 @@
 //
 //   findCandidates(game)   → mogelijke Wikipedia-pagina's, beste eerst
 //   findPage(title)        → één vaste pagina op titel
+//   lookupInput(text)      → zelf ingevoerde link of titel → pagina's
 //   loadDetails(candidate) → boxart, samenvatting, genre, Metacritic, …
 
 const WIKI = (lang) => `https://${lang}.wikipedia.org/w/api.php`;
@@ -87,11 +88,11 @@ const wikiUrl = (lang, title) => `https://${lang}.wikipedia.org/wiki/${encodeURI
 
 /**
  * Zoekt de game op Engelstalige Wikipedia (daar staan verreweg de meeste
- * games, ook retro). Geeft maximaal 5 kandidaten terug, beste eerst.
+ * games, ook retro). Geeft maximaal 10 kandidaten terug, beste eerst.
  */
 export function findCandidates(game, signal) {
   const year = game.years?.length ? ` ${Math.min(...game.years)}` : '';
-  const query = `${game.title}${year} video game`;
+  const query = game.plainQuery ? game.title : `${game.title}${year} video game`;
   return cached(candidateCache, query, async () => {
     const t = withTimeout(signal);
     try {
@@ -103,7 +104,7 @@ export function findCandidates(game, signal) {
       return pages
         .map((p) => ({ ...toCandidate(p), score: score(p, game) }))
         .sort((x, y) => y.score - x.score)
-        .slice(0, 5);
+        .slice(0, 10);
     } finally {
       t.done();
     }
@@ -126,6 +127,55 @@ export function findPage(title, signal) {
       t.done();
     }
   });
+}
+
+/**
+ * Haalt de paginatitel uit een Wikipedia-link, bijvoorbeeld
+ * https://en.wikipedia.org/wiki/Assassin%27s_Creed_Shadows (ook mobiele
+ * links en ?title=…). Geeft { lang, title } of null als het geen link is.
+ */
+export function parseWikiLink(text) {
+  let url;
+  try { url = new URL(String(text || '').trim()); } catch { return null; }
+  const m = /^([a-z-]+)(?:\.m)?\.wikipedia\.org$/i.exec(url.hostname);
+  if (!m) return null;
+  let title = '';
+  if (url.pathname.startsWith('/wiki/')) title = url.pathname.slice(6);
+  else title = url.searchParams.get('title') || '';
+  try { title = decodeURIComponent(title); } catch { /* laat zoals het is */ }
+  title = title.replace(/_/g, ' ').trim();
+  return title ? { lang: m[1].toLowerCase(), title } : null;
+}
+
+/**
+ * Zelf ingevoerde link of titel ("Niet de juiste game?").
+ * - Engelse Wikipedia-link of exacte titel → die ene pagina.
+ * - Link naar een andere taal → de Engelse pagina via de taallinks.
+ * - Anders: zoeken op precies wat je typte (zonder "video game" erachter).
+ * Geeft een lijst kandidaten (kan leeg zijn).
+ */
+export async function lookupInput(text, signal) {
+  const input = String(text || '').trim();
+  if (!input) return [];
+  const link = parseWikiLink(input);
+  if (link && link.lang !== 'en') {
+    const t = withTimeout(signal);
+    let enTitle = '';
+    try {
+      const json = await api(WIKI(link.lang), {
+        action: 'query', titles: link.title, prop: 'langlinks', lllang: 'en', redirects: '1',
+      }, t.signal);
+      enTitle = json.query?.pages?.[0]?.langlinks?.[0]?.title || '';
+    } finally {
+      t.done();
+    }
+    if (!enTitle) return [];
+    const page = await findPage(enTitle, signal);
+    return page ? [page] : [];
+  }
+  const exact = await findPage(link ? link.title : input, signal);
+  if (exact || link) return exact ? [exact] : [];
+  return findCandidates({ title: input, years: [], plainQuery: true }, signal);
 }
 
 const PAGE_PROPS = {
