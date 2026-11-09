@@ -7,7 +7,7 @@ Ideeën voor nieuwe functies en verbeteringen. Gebouwde punten verhuizen naar `C
 1. ~~**"Wat ga ik nu spelen?"** — een knop die willekeurig een game uit de backlog kiest, eventueel binnen het huidige filter (bijvoorbeeld alleen SNES of alleen retro).~~ Gebouwd in 1.9.0.
 2. **"Nu bezig" bovenaan** — de games met status *Bezig* als vaste strook bovenaan de lijst.
 3. **Filters en sortering onthouden** — per apparaat bewaren, zodat ze na ontgrendelen niet opnieuw ingesteld hoeven te worden.
-4. **Slimmer toevoegen** — tijdens het typen van een titel Wikipedia-suggesties tonen en jaar, platform en serie automatisch invullen.
+4. ~~**Slimmer toevoegen** — tijdens het typen van een titel Wikipedia-suggesties tonen en jaar, platform en serie automatisch invullen.~~ Gebouwd in 1.25.0.
 5. **Vegen op de iPhone** — een rij naar links of rechts vegen om de status te wijzigen.
 
 ## Grotere functies

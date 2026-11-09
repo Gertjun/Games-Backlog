@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.25.0
+
+- **Slimmer toevoegen.** Typ bij *Game toevoegen* een paar letters van de titel en je ziet suggesties van Wikipedia, met hoesje en jaar. Staat de game al in je lijst, dan zie je dat er meteen bij.
+- Tik op een suggestie en de app vult de titel, het jaar, het platform, de serie en de categorie (Modern of Retro) voor je in. Velden die je zelf al had ingetypt blijven staan.
+- Is de game op meer platforms verschenen, dan zie je die als labels onder het veld Platforms. Tik erop om een platform toe te voegen of weg te halen.
+- Boxart en score staan direct op de nieuwe kaart, van precies de pagina die je koos. Was het toch niet de goede, tik dan op *Ontkoppelen* of typ verder; dan zoekt de app later zelf.
+- Werkt ook bij *Versie toevoegen*; daar blijft de serie van de oorspronkelijke game staan. Offline kun je gewoon zelf invullen zoals altijd.
+
 ## 1.24.0
 
 - **Nieuw scherm: Analyse.** In de zijbalk (iPad liggend, laptop) en in de tabbalk onderin staat nu *Analyse*, tussen Overzicht en Controle. Je ziet er:

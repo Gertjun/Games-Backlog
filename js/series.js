@@ -69,12 +69,23 @@ const PLATFORM_NAMES = [
   [/genesis|mega drive/i, 'Genesis'],
   [/windows|ms-dos|^personal computer$|macos|^linux$/i, 'PC'],
 ];
-const platformName = (label) => PLATFORM_NAMES.find(([re]) => re.test(label || ''))?.[1] || '';
+export const platformName = (label) => PLATFORM_NAMES.find(([re]) => re.test(label || ''))?.[1] || '';
 
 // Deze platforms tellen als Modern; de rest als Retro. Pc pas vanaf 2013.
 const MODERN = new Set(['PS4', 'PS5', 'Xbox One', 'Xbox Series', 'Switch 2']);
 export const sectionFor = (platforms, year) =>
   platforms.some((p) => MODERN.has(p) || (p === 'PC' && year >= 2013)) ? 'modern' : 'retro';
+
+const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/\([^)]*\)/g, '').replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** Bestaande serienaam gebruiken als die er duidelijk mee overeenkomt ("Zelda" bij "The Legend of Zelda"). */
+export function matchGroup(name, groups) {
+  const n = norm(name);
+  return groups.find((g) => norm(g) === n)
+    || groups.find((g) => norm(g).length >= 4 && (` ${n} `).includes(` ${norm(g)} `))
+    || name;
+}
 
 /** "Final Fantasy (video game series)" → "Final Fantasy" */
 export const cleanSeriesName = (s) => String(s || '')

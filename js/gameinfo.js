@@ -112,6 +112,40 @@ export function findCandidates(game, signal) {
 }
 
 /**
+ * Suggesties tijdens het typen van een titel (Game toevoegen). Zoekt alleen
+ * pagina's met de infobox voor een game, zodat series, personages en films
+ * er niet tussen staan. Het laatste woord mag nog half zijn ("zeld" → Zelda).
+ * Vindt dat niets, dan gewoon zoeken zoals bij "Niet de juiste game?".
+ */
+export function suggestGames(text, signal) {
+  const input = String(text || '').replace(/["*:]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (input.length < 2) return Promise.resolve([]);
+  const last = input.split(' ').pop();
+  const query = /^[\p{L}\p{N}]{2,}$/u.test(last) ? `${input}*` : input;
+  return cached(candidateCache, `suggest:${input.toLowerCase()}`, async () => {
+    const t = withTimeout(signal);
+    let pages = [];
+    try {
+      const json = await api(WIKI('en'), {
+        action: 'query', generator: 'search', gsrsearch: `${query} hastemplate:"Infobox video game"`,
+        gsrlimit: '6', gsrnamespace: '0', ...PAGE_PROPS,
+      }, t.signal);
+      pages = (json.query?.pages || []).filter((p) => !p.missing);
+    } finally {
+      t.done();
+    }
+    if (pages.length) {
+      return pages.sort((a, b) => (a.index || 0) - (b.index || 0)).map((p) => ({ ...toCandidate(p), game: true }));
+    }
+    const loose = await findCandidates({ title: input, years: [], plainQuery: true }, signal);
+    return loose.filter((c) => c.game).slice(0, 6);
+  });
+}
+
+/** "Final Fantasy VII (1997 video game)" → "Final Fantasy VII" */
+export const cleanGameTitle = (title) => String(title || '').replace(/\s*\((\d{4} )?video game\)$/i, '').trim();
+
+/**
  * Eén vaste Wikipedia-pagina op titel (doorverwijzingen worden gevolgd).
  * Voor games waarvan de juiste pagina vooraf bekend is (zie corrections.js).
  * Geeft null als de pagina niet bestaat.
@@ -263,15 +297,15 @@ async function scoresFromWikitext(title, signal) {
   return { metacritic: pick('MC'), gamerankings: pick('GR') };
 }
 
-async function labels(qids, signal) {
+async function labels(qids, signal, languages = ['nl', 'en']) {
   const out = new Map();
   const list = [...new Set(qids)];
   for (let i = 0; i < list.length; i += 50) {
     const json = await api(WIKIDATA, {
-      action: 'wbgetentities', ids: list.slice(i, i + 50).join('|'), props: 'labels', languages: 'nl|en',
+      action: 'wbgetentities', ids: list.slice(i, i + 50).join('|'), props: 'labels', languages: languages.join('|'),
     }, signal);
     for (const [id, e] of Object.entries(json.entities || {})) {
-      const label = e.labels?.nl?.value || e.labels?.en?.value;
+      const label = languages.map((l) => e.labels?.[l]?.value).find(Boolean);
       if (label) out.set(id, label);
     }
   }
@@ -315,10 +349,23 @@ export function loadCore(candidate, signal) {
       ];
       // Geen Metacritic op Wikidata? Dan tegelijk ook de recensietabel van Wikipedia.
       const needWikitext = !reviews.some((r) => r.by === 'Q150248');
-      const [names, wt] = await Promise.all([
+      // Platforms: alle bekende, en die van de eerste release (Engelse namen,
+      // die zet de app om naar zijn eigen korte namen, zie series.js).
+      const releases = (claims[P.released] || [])
+        .filter((c) => c.rank !== 'deprecated' && /^\+?\d{4}/.test(c.mainsnak?.datavalue?.value?.time || ''))
+        .map((c) => ({
+          time: c.mainsnak.datavalue.value.time.replace(/^\+/, ''),
+          platforms: (c.qualifiers?.[P.platform] || []).map((q) => q.datavalue?.value?.id).filter(Boolean),
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+      const platformIds = [...ids(claims, P.platform), ...releases.flatMap((r) => r.platforms)];
+      const [names, wt, pnames] = await Promise.all([
         wanted.length ? labels(wanted, t.signal) : new Map(),
         needWikitext ? scoresFromWikitext(candidate.title, t.signal).catch(() => null) : null,
+        platformIds.length ? labels(platformIds, t.signal, ['en', 'nl']).catch(() => new Map()) : new Map(),
       ]);
+      const pLabels = (list) => [...new Set(list.map((id) => pnames.get(id)).filter(Boolean))];
+      const firstRel = releases.find((r) => pLabels(r.platforms).length);
 
       const facts = {};
       for (const k of factProps) {
@@ -351,6 +398,9 @@ export function loadCore(candidate, signal) {
         facts,
         metacritic: dedupe(metacritic),
         gamerankings: dedupe(gamerankings),
+        // Alleen voor het invullen bij toevoegen; wordt niet in de kluis bewaard.
+        platformLabels: pLabels(platformIds),
+        firstPlatformLabels: firstRel ? pLabels(firstRel.platforms) : [],
       };
     } finally {
       t.done();

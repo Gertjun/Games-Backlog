@@ -27,6 +27,7 @@ import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch,
 import { applyCorrections } from './corrections.js';
 import { assignKnownSeries } from './series.js';
 import { openSeriesImport } from './series-dialog.js';
+import { attachSuggestions } from './suggest.js';
 import { currentScreen, onScreenChange, setCheckCount, select } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
 import { renderAnalysis } from './analysis.js';
@@ -743,8 +744,12 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
   }, '★')));
   drawStars();
 
+  const titleField = field('Titel', h('input', {
+    name: 'title', type: 'text', value: g.title, required: true, autocomplete: 'off',
+    placeholder: id ? null : 'Begin te typen voor suggesties',
+  }));
   const form = h('form', { class: 'stack gb-form' },
-    field('Titel', h('input', { name: 'title', type: 'text', value: g.title, required: true, autocomplete: 'off' })),
+    titleField,
     h('div', { class: 'field-row' },
       field('Categorie', h('select', { name: 'section' },
         Object.entries(SECTION).map(([v, t]) => h('option', { value: v, selected: g.section === v }, t)))),
@@ -816,7 +821,11 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
         if (!(src.links || []).includes(key)) updateById(d.games, src.id, { links: [...(src.links || []), key] });
         data.links = [key];
       }
-      d.games.push(newRecord(data));
+      const rec = newRecord(data);
+      d.games.push(rec);
+      // Gekozen suggestie: boxart en score meteen van die Wikipedia-pagina
+      const core = suggest?.core();
+      if (core) putInfo(d, rec.id, toStored(core, data.title, true));
     });
     close();
     ctx.toast(id ? 'Opgeslagen' : base ? `${data.title} toegevoegd als versie van ${base.title}` : `${data.title} toegevoegd`, 'ok');
@@ -835,8 +844,14 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
         h('span', { class: 'gb-series-cta-sub muted' }, 'Bijvoorbeeld alle Professor Layton-games in één keer'),
         h('span', { class: 'gb-series-cta-arrow', 'aria-hidden': 'true' }, '›')) : null,
       form));
+  // Nieuwe game of versie: suggesties van Wikipedia tijdens het typen
+  const suggest = id ? null : attachSuggestions({
+    form, after: titleField, games: all,
+    keep: base ? ['group', 'section'] : [],
+    prefer: base ? '' : view.platform,
+  });
   function close() { dlg.close(); }
-  dlg.addEventListener('close', () => dlg.remove());
+  dlg.addEventListener('close', () => { suggest?.destroy(); dlg.remove(); });
   document.body.append(dlg);
   dlg.showModal();
   if (!id) form.elements.title.focus();

@@ -1168,3 +1168,32 @@ button.gb-an-row:focus-visible, .gb-an-chip:focus-visible, .gb-an-topbtn:focus-v
 @media (prefers-reduced-motion: reduce) {
   .gb-an-seg, .gb-an-fill { transition: none; }
 }
+
+/* ---------- Slimmer toevoegen: suggesties bij de titel ---------- */
+.gb-suggest {
+  list-style: none; margin: -4px 0 0; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+}
+.gb-suggest[hidden], .gb-suggest-status[hidden], .gb-suggest-link[hidden], .gb-suggest-ptags[hidden] { display: none; }
+.gb-suggest-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 8px;
+  text-align: left; font: inherit; color: var(--text); background: none; border: 0; border-radius: 8px; cursor: pointer;
+}
+.gb-suggest-item:hover, .gb-suggest-item:focus-visible { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); outline: none; }
+.gb-suggest-thumb {
+  flex: none; width: 36px; height: 48px; object-fit: cover; border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 8%, var(--surface));
+}
+.gb-suggest-text { display: flex; flex-direction: column; min-width: 0; }
+.gb-suggest-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gb-suggest-desc { font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gb-suggest-status { margin: -4px 0 0; font-size: 0.875rem; }
+.gb-suggest-link {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -4px 0 0;
+  padding: 8px 10px; font-size: 0.875rem; border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.gb-suggest-link .btn { flex: none; }
+.gb-suggest-ptags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 0; }
+.gb-suggest-ptags-label { font-size: 0.8125rem; margin-right: 2px; }

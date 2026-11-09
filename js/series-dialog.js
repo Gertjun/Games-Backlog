@@ -12,18 +12,10 @@ import { h } from './core/dom.js';
 import { alive, newRecord } from './core/records.js';
 import { platformIcon, platformKey } from './platforms.js';
 import { putInfo } from './enrich.js';
-import { searchSeries, loadSeriesGames, cleanSeriesName, sectionFor } from './series.js';
+import { searchSeries, loadSeriesGames, cleanSeriesName, sectionFor, matchGroup } from './series.js';
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
   .replace(/\([^)]*\)/g, '').replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
-
-/** Bestaande serienaam gebruiken als die er duidelijk mee overeenkomt ("Zelda" bij "The Legend of Zelda"). */
-function matchGroup(name, groups) {
-  const n = norm(name);
-  return groups.find((g) => norm(g) === n)
-    || groups.find((g) => norm(g).length >= 4 && (` ${n} `).includes(` ${norm(g)} `))
-    || name;
-}
 
 export function openSeriesImport(ctx, { onDone } = {}) {
   document.querySelector('dialog.gb-series')?.close();
