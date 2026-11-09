@@ -12,7 +12,7 @@ Ideeën voor nieuwe functies en verbeteringen. Gebouwde punten verhuizen naar `C
 
 ## Grotere functies
 
-6. **Statistiekenscherm** — uitgespeeld per jaar en per platform, verhouding modern/retro, eigen sterren naast de Metascore en het verloop van de backlog.
+6. **Statistiekenscherm** (basis gebouwd in 1.24.0 als scherm Analyse; verloop van de backlog ontbreekt nog) — uitgespeeld per jaar en per platform, verhouding modern/retro, eigen sterren naast de Metascore en het verloop van de backlog.
 7. **Jaaroverzicht** — "mijn gamejaar": wat er dat jaar is uitgespeeld, de hoogst beoordeelde game en de meest gespeelde console.
 8. **Collectie bijhouden** — per game vastleggen of je hem bezit en hoe (fysiek of digitaal, los of compleet in doos), plus een status *Wensenlijst* voor games die je nog wilt kopen.
 9. **Speeltijd** — velden voor gespeelde uren en geschatte lengte, met een filter voor korte games. HowLongToBeat heeft geen officiële API, dus waarschijnlijk zelf invullen.

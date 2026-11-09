@@ -3,7 +3,7 @@
 // BIJ ELKE RELEASE: VERSION ophogen (gelijk aan js/config.js).
 // NIEUW BESTAND?    Toevoegen aan PRECACHE.
 
-const VERSION = '1.23.3';
+const VERSION = '1.24.0';
 
 // De cache-naam bevat het pad van de app, zodat meerdere apps onder
 // <gebruiker>.github.io elkaars cache niet opruimen.
@@ -30,6 +30,7 @@ const PRECACHE = [
   './js/series-dialog.js',
   './js/nav.js',
   './js/check.js',
+  './js/analysis.js',
   './js/settings-nav.js',
   './js/dropdown.js',
   './js/core/shell.js',

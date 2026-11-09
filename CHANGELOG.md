@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.24.0
+
+- **Nieuw scherm: Analyse.** In de zijbalk (iPad liggend, laptop) en in de tabbalk onderin staat nu *Analyse*, tussen Overzicht en Controle. Je ziet er:
+  - **Voortgang:** hoeveel games je hebt uitgespeeld, met een balk die de verdeling over Uitgespeeld, Bezig, Backlog en Gestopt laat zien.
+  - **Uitgespeeld per jaar**, op de datum *Uitgespeeld op*.
+  - **Per platform** en **per serie:** de hele balk is het aantal games, het gekleurde deel wat je daarvan hebt uitgespeeld. Bij series zie je eerst de tien grootste; met *Toon alle series* zie je ze allemaal.
+  - **Modern en retro**, en **Scores:** de gemiddelde score, je eigen sterren en de vijf hoogst scorende games die nog in je backlog staan (tik erop voor de details).
+  - Tik op een platform, serie, status of categorie en je gaat naar Overzicht met alleen dat filter aan.
+- Het blokje met de voortgang bovenaan Overzicht is weg; die staat nu op Analyse.
+
 ## 1.23.3
 
 - **Alle filterknoppen even groot.** Liggend (in de zijbalk) waren status, systeem en serie iets smaller dan de rest. Nu zijn ze allemaal even breed.

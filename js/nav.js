@@ -1,5 +1,5 @@
 // =============================================================
-//  Navigatie tussen de schermen: Overzicht, Controle en Instellingen
+//  Navigatie tussen de schermen: Overzicht, Analyse, Controle en Instellingen
 // -------------------------------------------------------------
 //  Laptop en iPad liggend (vanaf 1000px): een zijbalk links met bovenaan
 //  het app-icoon, de naam en de versie; de kopbalk toont dan de titel van
@@ -7,7 +7,7 @@
 //  iPhone en iPad staand: een tabbalk onderin.
 //  Het is één <nav>; de CSS (app.css, "Navigatie") bepaalt de vorm.
 //
-//  Overzicht en Controle tekent app.js in #app-root. Instellingen is het
+//  Overzicht, Analyse en Controle tekent app.js in #app-root. Instellingen is het
 //  scherm van de schil (#dlg-settings met data-mode="page"): die knop heeft
 //  data-open-settings, de schil opent het en meldt dat met "settings:open".
 //  Dit bestand raakt geen gegevens aan.
@@ -18,12 +18,14 @@ import { APP } from './config.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ICONS = {
   overview: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+  analysis: ['M4 20h16', 'M7 16v-4', 'M12 16V7', 'M17 16v-7'],
   check: ['M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z', 'M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2', 'm9 14 2 2 4-4'],
   settings: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z'],
 };
 
 const SCREENS = [
   { id: 'overview', label: 'Overzicht' },
+  { id: 'analysis', label: 'Analyse' },
   { id: 'check', label: 'Controle' },
   { id: 'settings', label: 'Instellingen' },
 ];
@@ -79,7 +81,7 @@ function show(id) {
   }
 }
 
-/** Naar Overzicht of Controle. */
+/** Naar Overzicht, Analyse of Controle. */
 export function select(id) {
   const changed = id !== appScreen;
   appScreen = id;

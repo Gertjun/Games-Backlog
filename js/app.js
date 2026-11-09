@@ -27,8 +27,9 @@ import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch,
 import { applyCorrections } from './corrections.js';
 import { assignKnownSeries } from './series.js';
 import { openSeriesImport } from './series-dialog.js';
-import { currentScreen, onScreenChange, setCheckCount } from './nav.js';
+import { currentScreen, onScreenChange, setCheckCount, select } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
+import { renderAnalysis } from './analysis.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
@@ -203,6 +204,19 @@ export const app = {
       afterRender(root, ctx);
       return;
     }
+    if (currentScreen() === 'analysis') {
+      renderAnalysis(root, {
+        all, status: STATUS, noSeries: NO_SERIES, compare: collator.compare,
+        scoreOf: (g) => mainScore(infoById.get(g.id), g)?.score || null,
+        scoreBadge: (g) => scoreBadge(infoById.get(g.id), g),
+        platformIcon, platformKey, platformRank,
+        jump: showFiltered,
+        openDetail: (id) => openDetail(ctx, id),
+        enrichNote: enrichLine(),
+      });
+      afterRender(root, ctx);
+      return;
+    }
     const listEl = h('div', { class: 'gb-list' });
     const chipsEl = h('div', { class: 'gb-chips', role: 'tablist', 'aria-label': 'Status' });
 
@@ -267,9 +281,10 @@ export const app = {
     }, '+');
 
     // Op een telefoon staat alles onder elkaar; op iPad (liggend) en laptop
-    // staan voortgang, zoeken en filters in een zijbalk naast de lijst.
+    // staan zoeken en filters in een zijbalk naast de lijst. De voortgang
+    // staat op het scherm Analyse (js/analysis.js).
     root.replaceChildren(h('div', { class: 'gb-layout' },
-      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, renderStats(all), pickBtn, search, controls),
+      h('aside', { class: 'gb-side', 'aria-label': 'Zoeken en filters' }, enrichLine(), pickBtn, search, controls),
       listEl), addBtn);
     refresh();
     afterRender(root, ctx);
@@ -282,6 +297,12 @@ onScreenChange((screen) => {
   if (screen !== 'check') resetCheckSession();
   if (last) app.render(last.root, last.ctx);
 });
+
+/** Vanuit Analyse naar Overzicht, met alleen dit filter aan (zoeken leeg). */
+function showFiltered(filter) {
+  Object.assign(view, { q: '', status: '', section: '', group: '', platform: '', year: '' }, filter);
+  select('overview');
+}
 
 function afterRender(root, ctx) {
   watchLock(root);
@@ -324,21 +345,6 @@ async function fillMissingYears(ctx) {
 }
 
 /* ---------- Onderdelen ---------- */
-
-function renderStats(all) {
-  const done = all.filter((g) => g.status === 'done').length;
-  const playing = all.filter((g) => g.status === 'playing').length;
-  const pct = all.length ? Math.round((done / all.length) * 100) : 0;
-  const bar = h('div', { class: 'gb-bar-fill' });
-  bar.style.width = `${pct}%`; // via JS, de CSP staat geen inline style toe
-  return h('section', { class: 'card gb-stats', 'aria-label': 'Voortgang' },
-    h('div', { class: 'gb-stat-row' },
-      h('span', {}, h('strong', {}, String(done)), ` / ${all.length} uitgespeeld`),
-      h('span', {}, h('strong', {}, String(playing)), ' bezig'),
-      h('strong', {}, `${pct}%`)),
-    h('div', { class: 'gb-bar' }, bar),
-    enrichLine());
-}
 
 /** "Scores ophalen… 42 van 160", zolang dat op de achtergrond loopt. */
 function enrichLine() {
