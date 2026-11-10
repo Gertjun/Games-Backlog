@@ -5,7 +5,9 @@
 //   games: { id, createdAt, updatedAt, title, section ('modern'|'retro'),
 //            group (serie/console-groep), platforms: string[], years: number[],
 //            status ('backlog'|'playing'|'done'|'dropped'),
-//            rating (0–5), playedOn, finished ('yyyy-mm-dd'), notes }
+//            rating (jouw beoordeling, 1–100; 0 = geen), playedOn,
+//            finished ('yyyy-mm-dd'), notes,
+//            myScore (handmatige Metascore, 1–100; 0 = geen) }
 //   gameInfo: { id (= game-id), … } publieke info van Wikipedia/Wikidata
 //            (score, boxart-link, genre…), zie js/enrich.js
 // Schema 2: `years` toegevoegd (jaar/jaren van release). Jaar en platform
@@ -35,7 +37,7 @@ import { renderAnalysis } from './analysis.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
-const SCHEMA = 8;
+const SCHEMA = 9;
 const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
@@ -170,6 +172,15 @@ export const app = {
     // Schema 8: losse games uit Overig die samen een serie vormen, krijgen die
     // serie (Mass Effect, Horizon, The Last of Us, Star Wars Jedi, Mafia, Chrono).
     if ((data.schema || 0) < 8) assignKnownSeries(data.games, Date.now());
+    // Schema 9: je beoordeling gaat van 1–5 sterren naar 1–100, dezelfde schaal
+    // als de Metascore (1 ster = 20, 5 sterren = 100). Voorspelbaar, dus elk
+    // apparaat komt op hetzelfde uit; updatedAt blijft ongemoeid. Het veld
+    // myScore heet in de app nu "Metascore (handmatig)"; de data blijft gelijk.
+    if ((data.schema || 0) < 9) {
+      for (const g of data.games) {
+        if (!g.deleted && g.rating >= 1 && g.rating <= 5) g.rating = Math.round(g.rating) * 20;
+      }
+    }
     data.schema = Math.max(data.schema || 0, SCHEMA);
     return data;
   },
@@ -270,7 +281,7 @@ export const app = {
       group('view', 'Weergave',
         menu('grouped', 'Weergave', () => [['yes', 'Per serie'], ['platform', 'Per platform'], ['year', 'Per releasejaar'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
       group('sort', 'Sorteren',
-        menu('sort', 'Sorteren', () => [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']])));
+        menu('sort', 'Sorteren', () => [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Jouw beoordeling']])));
 
     const pickBtn = h('button', {
       class: 'btn gb-pick-btn', type: 'button',
@@ -531,9 +542,10 @@ function gameRow(g, ctx) {
   // Labels staan altijd op één regel, in volgorde van belang (zie .gb-meta in app.css):
   // 1. status, platform, jaar: altijd zichtbaar;
   // 2. "ook op …": wordt ingekort met "…" als de ruimte krap is (het icoon blijft);
-  // 3. sterren, datum, notities: alleen als ze er helemaal op passen, anders weg.
+  // 3. jouw beoordeling, datum, notities: alleen als ze er helemaal op passen, anders weg.
   const extra = [
-    g.rating ? h('span', { class: 'gb-stars', 'aria-label': `${g.rating} sterren` }, '★'.repeat(g.rating)) : null,
+    g.rating ? h('span', { class: 'gb-myrating', title: `Jouw beoordeling: ${g.rating}`, 'aria-label': `Jouw beoordeling ${g.rating} van 100` },
+      h('span', { 'aria-hidden': 'true' }, '★'), String(g.rating)) : null,
     g.status === 'done' && g.finished ? h('span', { class: 'gb-date' }, formatDate(g.finished)) : null,
     g.notes ? h('span', { class: 'gb-tag', title: 'Heeft notities', 'aria-label': 'Heeft notities' }, '📝') : null,
   ].filter(Boolean);
@@ -576,8 +588,9 @@ function versionsTag(g) {
 }
 
 /**
- * De score op de kaart: je eigen score (zelf ingevuld, bijvoorbeeld van
- * Metacritic), anders de Metascore, anders GameRankings (oudere retro-games).
+ * De score op de kaart: de Metascore die je zelf hebt ingevuld (als de app hem
+ * niet vond of de verkeerde had), anders de opgehaalde Metascore, anders
+ * GameRankings (oudere retro-games). Je eigen beoordeling (rating) staat los hiervan.
  */
 function mainScore(info, g) {
   if (g?.myScore) return { score: g.myScore, source: 'own' };
@@ -587,8 +600,9 @@ function mainScore(info, g) {
   return null;
 }
 
-/** "Metascore 85", "GameRankings 85%" of "Eigen score 85". */
-const scoreLabel = (sc) => ({ own: 'Eigen score ', mc: 'Metascore ' }[sc.source] ?? 'GameRankings ') + sc.score + (sc.source === 'gr' ? '%' : '');
+/** "Metascore 85", "Metascore 85 (handmatig)" of "GameRankings 85%". */
+const scoreLabel = (sc) => (sc.source === 'gr' ? `GameRankings ${sc.score}%`
+  : `Metascore ${sc.score}${sc.source === 'own' ? ' (handmatig)' : ''}`);
 
 function scoreBadge(info, g) {
   const sc = mainScore(info, g);
@@ -792,18 +806,12 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
     rating: 0, playedOn: '', finished: '', notes: '',
   };
   if (!g) return;
-  let rating = g.rating || 0;
 
   const field = (label, control) => h('label', { class: 'field' }, h('span', {}, label), control);
   const datalist = (listId, values) => h('datalist', { id: listId }, values.map((v) => h('option', { value: v })));
-
-  const starsEl = h('div', { class: 'gb-star-input', role: 'radiogroup', 'aria-label': 'Beoordeling' });
-  const drawStars = () => starsEl.replaceChildren(...[1, 2, 3, 4, 5].map((n) => h('button', {
-    type: 'button', role: 'radio', 'aria-checked': String(n === rating), 'aria-label': `${n} ster${n > 1 ? 'ren' : ''}`,
-    class: n <= rating ? 'is-on' : '',
-    onClick: () => { rating = rating === n ? 0 : n; drawStars(); },
-  }, '★')));
-  drawStars();
+  const score100 = (name, value, placeholder) => h('input', {
+    name, type: 'number', inputmode: 'numeric', min: 1, max: 100, step: 1, value: value || '', placeholder,
+  });
 
   const titleField = field('Titel', h('input', {
     name: 'title', type: 'text', value: g.title, required: true, autocomplete: 'off',
@@ -821,16 +829,13 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
     field('Jaar van release (komma-gescheiden)', h('input', {
       name: 'years', type: 'text', value: (g.years || []).join(', '), autocomplete: 'off', placeholder: 'bv. 1991, 2002',
     })),
-    field('Eigen score (optioneel, 1–100)', h('input', {
-      name: 'myScore', type: 'number', inputmode: 'numeric', min: 1, max: 100, step: 1,
-      value: g.myScore || '', placeholder: 'bv. de Metascore van jouw versie',
-    })),
+    field('Metascore (handmatig, 1–100)', score100('myScore', g.myScore, 'alleen als hij ontbreekt of niet klopt')),
     field('Status', h('select', { name: 'status' },
       Object.entries(STATUS).map(([v, s]) => h('option', { value: v, selected: g.status === v }, s.label)))),
     h('div', { class: 'field-row' },
       field('Gespeeld op', h('input', { name: 'playedOn', type: 'text', value: g.playedOn || '', autocomplete: 'off', placeholder: 'bv. Switch' })),
       field('Uitgespeeld op', h('input', { name: 'finished', type: 'date', value: g.finished || '' }))),
-    h('div', { class: 'field' }, h('span', {}, 'Beoordeling'), starsEl),
+    field('Jouw beoordeling (1–100)', score100('rating', g.rating, 'bv. 85, zelfde schaal als de Metascore')),
     field('Notities', h('textarea', { name: 'notes', rows: 3 }, g.notes || '')),
     datalist('gb-groups', uniq(all.map((x) => x.group))),
     datalist('gb-platforms', uniq(all.flatMap((x) => x.platforms || []))),
@@ -867,7 +872,7 @@ function openEditor(ctx, id, { versionOf = null } = {}) {
       status: v.status,
       playedOn: v.playedOn.trim(),
       finished: v.finished || (v.status === 'done' ? (g.finished || today()) : ''),
-      rating,
+      rating: parseScore(v.rating),
       notes: v.notes.trim(),
       myScore: parseScore(v.myScore),
     };
@@ -1150,14 +1155,14 @@ function detailHero(g, s, img) {
 function scoreCard(s, g) {
   const core = s.core;
   if (g.myScore) {
-    // Zelf ingevuld: die gaat voor. De opgehaalde score staat er klein onder.
+    // Handmatig ingevuld: die gaat voor. De opgehaalde score staat er klein onder.
     const fetched = mainScore(core?.found === false ? null : { found: true, ...core });
     return h('section', { class: 'card gb-d-tile' },
-      h('h2', { class: 'gb-d-label' }, 'Eigen score'),
-      h('div', { class: 'gb-d-score', dataset: { level: scoreLevel(g.myScore), source: 'own' }, 'aria-label': `${g.myScore} van de 100` }, String(g.myScore)),
-      h('p', { class: 'gb-d-note' }, 'Zelf ingevuld'),
+      h('h2', { class: 'gb-d-label' }, 'Metascore'),
+      h('div', { class: 'gb-d-score', dataset: { level: scoreLevel(g.myScore), source: 'own' }, 'aria-label': `${g.myScore} van de 100, handmatig ingevuld` }, String(g.myScore)),
+      h('p', { class: 'gb-d-note' }, 'Handmatig ingevuld'),
       fetched ? h('ul', { class: 'gb-d-subscores' }, h('li', {},
-        h('span', {}, `${fetched.source === 'mc' ? 'Metascore' : 'GameRankings'} (Wikipedia)`),
+        h('span', {}, `Gevonden op Wikipedia${fetched.source === 'gr' ? ' (GameRankings)' : ''}`),
         h('strong', { dataset: { level: scoreLevel(fetched.score) } }, String(fetched.score))))
         : null);
   }
@@ -1200,9 +1205,20 @@ function progressCard(g, ctx) {
         });
       },
     }, h('span', { class: 'gb-d-statusdot' }, st.icon), st.label),
-    h('div', { class: 'gb-d-stars', 'aria-label': g.rating ? `${g.rating} van 5 sterren` : 'Nog geen beoordeling' },
-      [1, 2, 3, 4, 5].map((n) => h('span', { class: n <= (g.rating || 0) ? 'is-on' : '' }, '★'))),
+    myRating(g),
     g.status === 'done' && g.finished ? h('p', { class: 'gb-d-note' }, `Uitgespeeld ${formatDate(g.finished)}`) : null);
+}
+
+/** Jouw beoordeling (1–100) met het verschil met de Metascore ernaast. */
+function myRating(g) {
+  if (!g.rating) return h('p', { class: 'gb-d-note' }, 'Nog geen beoordeling');
+  const sc = mainScore(infoById.get(g.id), g);
+  const diff = sc ? g.rating - sc.score : null;
+  const diffText = diff == null ? '' : diff === 0 ? 'gelijk aan de Metascore'
+    : `${diff > 0 ? '+' : '−'}${Math.abs(diff)} t.o.v. ${sc.source === 'gr' ? 'GameRankings' : 'Metascore'} ${sc.score}`;
+  return h('div', { class: 'gb-d-myrating', 'aria-label': `Jouw beoordeling ${g.rating} van 100${diffText ? `, ${diffText}` : ''}` },
+    h('span', { class: 'gb-d-myrating-num', dataset: { level: scoreLevel(g.rating) }, 'aria-hidden': 'true' }, String(g.rating)),
+    h('span', { class: 'gb-d-myrating-text', 'aria-hidden': 'true' }, h('strong', {}, 'Jouw beoordeling'), diffText || null));
 }
 
 /** "Andere versies": dezelfde game op andere platforms, met koppelen en loskoppelen. */

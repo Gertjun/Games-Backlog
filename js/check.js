@@ -2,7 +2,7 @@
 //  Controle: games waarvan informatie mist of onduidelijk is
 // =============================================================
 // Een game komt op Controle als:
-//   - er geen score is (en je hebt zelf ook geen eigen score ingevuld);
+//   - er geen score is (en je hebt de Metascore ook niet handmatig ingevuld);
 //   - de gevonden Wikipedia-pagina mogelijk over een andere versie gaat:
 //     de titel komt niet overeen (bijvoorbeeld "Horizon Zero Dawn" bij de
 //     Remastered), of het releasejaar wijkt meer dan een jaar af van het jaar
@@ -11,7 +11,7 @@
 //   - er geen boxart is.
 // Score en boxart worden pas beoordeeld als de informatie is opgehaald.
 //
-// Oplossen kan direct in de lijst: een eigen score, een jaar of een platform
+// Oplossen kan direct in de lijst: een handmatige Metascore, een jaar of een platform
 // invullen, een andere Wikipedia-pagina kiezen, of bevestigen dat de gevonden
 // pagina klopt (veld confirmedPage op de game). Een opgeloste game blijft zichtbaar (met "Opgelost") tot je
 // het scherm verlaat, zodat de lijst niet onder je vinger verspringt.
@@ -82,7 +82,7 @@ export function findIssues(g, info) {
   return out;
 }
 
-/** Eigen score uit een invoerveld: een heel getal van 1 tot en met 100, anders 0 (= geen). */
+/** Score (1–100) uit een invoerveld: een heel getal van 1 tot en met 100, anders 0 (= geen). */
 export function parseScore(v) {
   const s = String(v ?? '').trim();
   if (!s) return 0;
@@ -186,10 +186,10 @@ function item(g, issues, deps) {
   const save = (changes) => setTimeout(() => ctx.update((d) => { updateById(d.games, g.id, changes); }), 0);
   const blurOnEnter = (e) => { if (e.key === 'Enter') e.target.blur(); };
 
-  const scoreField = h('label', { class: 'field gb-check-field' }, h('span', {}, 'Eigen score'),
+  const scoreField = h('label', { class: 'field gb-check-field' }, h('span', {}, 'Metascore'),
     h('input', {
       type: 'number', inputmode: 'numeric', min: 1, max: 100, step: 1, value: g.myScore || '',
-      placeholder: '1–100', dataset: { focus: `${g.id}:score` },
+      placeholder: '1–100', title: 'Metascore handmatig invullen', dataset: { focus: `${g.id}:score` },
       onChange: (e) => {
         const n = parseScore(e.target.value);
         if (e.target.value.trim() && !n) { ctx.toast('Vul een score van 1 tot en met 100 in.', 'error'); return; }

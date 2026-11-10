@@ -8,8 +8,8 @@
 //     uitgespeeld. De lengte van de balk is het aantal games, het gekleurde
 //     deel het aantal uitgespeeld;
 //   - Modern en retro;
-//   - Scores: gemiddelde score, je eigen sterren en de hoogst scorende games
-//     die nog in je backlog staan.
+//   - Scores: gemiddelde Metascore, je gemiddelde beoordeling (1–100), hoeveel
+//     die afwijkt van de Metascore, en de hoogst scorende games in je backlog.
 // Tik op een platform, serie, status of categorie en je gaat naar Overzicht
 // met dat filter aan. Dit bestand wijzigt geen gegevens.
 
@@ -220,7 +220,10 @@ function scoreCard({ all, scoreOf, scoreBadge, openDetail, compare }) {
   const scored = all.map((g) => [g, scoreOf(g)]).filter(([, s]) => s);
   const doneScores = scored.filter(([g]) => g.status === 'done').map(([, s]) => s);
   const rated = all.filter((g) => g.rating > 0);
-  const stars = rated.length ? (rated.reduce((a, g) => a + g.rating, 0) / rated.length).toFixed(1).replace('.', ',') : null;
+  // Verschil met de Metascore: alleen games met allebei een score
+  const diffs = rated.map((g) => [g.rating, scoreOf(g)]).filter(([, s]) => s).map(([r, s]) => r - s);
+  const diff = avg(diffs);
+  const signed = (n) => (n == null ? null : n === 0 ? '0' : `${n > 0 ? '+' : '−'}${Math.abs(n)}`);
 
   const tile = (value, label) => h('div', { class: 'gb-an-tile' },
     h('strong', {}, value ?? '–'), h('span', {}, label));
@@ -232,7 +235,9 @@ function scoreCard({ all, scoreOf, scoreBadge, openDetail, compare }) {
     h('div', { class: 'gb-an-tiles' },
       tile(avg(scored.map(([, s]) => s)), `gemiddelde score (${scored.length} games)`),
       tile(avg(doneScores), 'gemiddeld van wat je uitspeelde'),
-      tile(stars ? `${stars} ★` : null, `jouw sterren (${rated.length} beoordeeld)`)),
+      tile(avg(rated.map((g) => g.rating)), `jouw gemiddelde beoordeling (${rated.length} games)`),
+      tile(signed(diff), diffs.length
+        ? `jij t.o.v. de Metascore (${diffs.length} games)` : 'jij t.o.v. de Metascore')),
     top.length
       ? h('div', { class: 'gb-an-top' },
         h('h4', { class: 'gb-an-subhead' }, 'Hoogst scorend in je backlog'),

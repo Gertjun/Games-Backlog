@@ -277,7 +277,11 @@ body { background-color: var(--bg); }
 .gb-tag-year { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .gb-tag-playing { color: var(--warn); }
 .gb-tag-dropped { color: var(--danger); }
-.gb-stars { font-size: 0.8rem; line-height: 20px; color: var(--warn); letter-spacing: 1px; white-space: nowrap; }
+.gb-myrating {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 0.78rem; line-height: 20px;
+  font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap;
+}
+.gb-myrating > span { color: var(--warn); }
 .gb-date { font-size: 0.75rem; line-height: 20px; color: var(--muted); white-space: nowrap; }
 
 .gb-fab {
@@ -289,12 +293,6 @@ body { background-color: var(--bg); }
 }
 
 .gb-form { padding-top: 12px; }
-.gb-star-input { display: flex; gap: 2px; }
-.gb-star-input button {
-  width: var(--tap); height: var(--tap); padding: 0; background: none; border: 0; cursor: pointer;
-  font-size: 1.7rem; line-height: 1; color: var(--border);
-}
-.gb-star-input button.is-on { color: var(--warn); }
 .gb-form-actions { justify-content: flex-end; }
 .gb-form-actions .btn-danger { margin-right: auto; }
 
@@ -433,8 +431,20 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 .gb-d-statusbtn[data-status="done"] .gb-d-statusdot { background: var(--ok); border-color: var(--ok); color: #fff; }
 .gb-d-statusbtn[data-status="dropped"] { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
 .gb-d-statusbtn[data-status="dropped"] .gb-d-statusdot { border-color: var(--danger); }
-.gb-d-stars { font-size: 1.25rem; letter-spacing: 2px; color: var(--border); line-height: 1; }
-.gb-d-stars .is-on { color: var(--warn); }
+/* Jouw beoordeling (1–100) in het detailscherm, met het verschil met de Metascore */
+.gb-d-myrating { display: flex; align-items: center; gap: 10px; }
+.gb-d-myrating-num {
+  --sc: var(--muted);
+  min-width: 40px; height: 40px; padding: 0 6px; box-sizing: border-box; border-radius: 10px;
+  display: grid; place-items: center; font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--sc); background: color-mix(in srgb, var(--sc) 14%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sc) 70%, transparent);
+}
+.gb-d-myrating-num[data-level="good"] { --sc: #1fae5b; }
+.gb-d-myrating-num[data-level="mixed"] { --sc: #e3a400; }
+.gb-d-myrating-num[data-level="bad"] { --sc: #e5484d; }
+.gb-d-myrating-text { display: grid; font-size: 0.82rem; color: var(--muted); }
+.gb-d-myrating-text strong { color: var(--text); font-size: 0.88rem; }
 
 .gb-d-section { padding: 16px; display: grid; gap: 12px; }
 .gb-d-h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
@@ -527,10 +537,15 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sc) 70%, transparent);
 }
 .gb-game[data-status="done"] .gb-score { opacity: 0.75; }
-/* Eigen score (zelf ingevuld): gevuld in de scorekleur, met een ring in de accentkleur */
-.gb-score[data-source="own"], .gb-wall-score[data-source="own"], .gb-d-score[data-source="own"] {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+/* Metascore handmatig ingevuld: ziet eruit als een gewone Metascore, met een
+   klein stipje in de accentkleur rechtsboven. */
+.gb-score[data-source="own"], .gb-d-score[data-source="own"] { position: relative; }
+.gb-score[data-source="own"]::after, .gb-wall-score[data-source="own"]::after, .gb-d-score[data-source="own"]::after {
+  content: ''; position: absolute; top: -3px; right: -3px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--surface);
 }
+.gb-d-score[data-source="own"]::after { width: 12px; height: 12px; top: -4px; right: -4px; }
 .gb-enrich { margin: 0; font-size: 0.8rem; color: var(--muted); }
 .gb-enrich[hidden] { display: none; }
 
@@ -1208,7 +1223,7 @@ button.gb-an-row:focus-visible, .gb-an-chip:focus-visible, .gb-an-topbtn:focus-v
 .gb-an-more { justify-self: start; }
 
 /* Scores */
-.gb-an-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gb-an-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .gb-an-tile {
   display: grid; gap: 4px; align-content: start; padding: 10px; border-radius: var(--radius-sm);
   background: var(--surface-2); font-size: 0.75rem; color: var(--muted); line-height: 1.25;

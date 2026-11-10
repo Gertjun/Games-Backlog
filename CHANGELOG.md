@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.28.0
+
+- **Metascore (handmatig)** is de nieuwe naam van het veld *Eigen score*. Het doet hetzelfde: vond de app geen Metascore, of de verkeerde, dan vul je hem zelf in bij *Bewerken* of direct op Controle, en dan gebruikt de app die overal.
+  - Op de kaart en in het detailscherm staat hij nu gewoon als **Metascore**. Een klein paars stipje rechtsboven laat zien dat je hem zelf hebt ingevuld (de paarse ring is weg).
+  - In het detailscherm staat de score die de app zelf vond er klein onder, als *Gevonden op Wikipedia*.
+- **Jouw beoordeling gaat van sterren naar 1–100**, dezelfde schaal als de Metascore. Je vult hem in bij *Bewerken*.
+  - Je bestaande sterren zijn omgerekend: 1 ster = 20, 2 = 40, 3 = 60, 4 = 80, 5 = 100. Pas ze gerust aan nu je fijner kunt scoren.
+  - Op de kaart zie je je beoordeling als ★ 85. In het detailscherm staat hij onder *Jouw voortgang*, met het verschil met de Metascore erbij (bijvoorbeeld *+7 t.o.v. Metascore 78*).
+  - Op Analyse zie je je gemiddelde beoordeling en hoeveel je gemiddeld hoger of lager scoort dan de Metascore, over de games die allebei een score hebben.
+- Gebruik je de app op meer apparaten, werk ze dan allemaal bij. Een apparaat met een oudere versie vraagt eerst om bij te werken voordat het synchroniseert.
+
 ## 1.27.0
 
 - **Ontbrekende games in je series.** Op Controle staan bovenaan nu twee tabs: **Informatie** (wat er al was) en **Series**. Tik bij Series op *Series controleren* en de app kijkt bij elke serie in je lijst welke games er volgens Wikidata nog meer bij horen. Je hoeft de series niet zelf op te zoeken.
