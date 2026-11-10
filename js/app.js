@@ -777,21 +777,31 @@ function pickOne(pool, currentId) {
 }
 
 function openPicker(ctx, all) {
-  const pool = pickPool(all);
-  if (!pool.length) {
+  const fullPool = pickPool(all);
+  if (!fullPool.length) {
     const filtered = view.q || view.section || view.group || view.platform || view.year;
     ctx.toast(filtered ? 'Geen backlog-games binnen deze filters' : 'Je backlog is leeg. Knap!', 'info');
     return;
   }
   document.querySelector('dialog.gb-pick')?.close();
 
-  const filtersOn = [view.q && `"${view.q.trim()}"`, SECTION[view.section], view.group, view.platform, view.year].filter(Boolean);
+  const baseFilters = [view.q && `"${view.q.trim()}"`, SECTION[view.section], view.group, view.platform, view.year].filter(Boolean);
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pool = fullPool;
+  let filtersOn = baseFilters;
   let current = null;
   let spinTimer = null;
 
+  // Eerst kiezen: Modern of Retro. Overgeslagen als de categorie al gefilterd
+  // is of als er maar in één categorie backlog-games staan.
+  const bySection = Object.keys(SECTION).map((key) => ({ key, games: fullPool.filter((g) => g.section === key) }));
+  const choosable = !view.section && bySection.filter((s) => s.games.length).length > 1;
+
   const stage = h('div', { class: 'gb-pick-stage', 'aria-live': 'polite' });
-  const rerollBtn = h('button', { type: 'button', class: 'btn', hidden: pool.length < 2, onClick: () => roll() }, diceIcon(), 'Andere suggestie');
+  const body = h('div', { class: 'sheet-body gb-pick-body' });
+  const poolLine = h('p', { class: 'gb-pick-pool muted' });
+  const rerollBtn = h('button', { type: 'button', class: 'btn', onClick: () => roll() }, diceIcon(), 'Andere suggestie');
+  const backBtn = h('button', { type: 'button', class: 'btn btn-ghost gb-pick-back', hidden: !choosable, onClick: () => choose() }, '← Andere categorie');
   const detailBtn = h('button', {
     type: 'button', class: 'btn',
     onClick: () => { const id = current.id; dlg.close(); openDetail(ctx, id); },
@@ -824,11 +834,39 @@ function openPicker(ctx, all) {
       g.group ? h('p', { class: 'gb-pick-group' }, g.group) : null);
   };
 
+  function start(section) {
+    pool = section ? fullPool.filter((g) => g.section === section) : fullPool;
+    filtersOn = section ? [SECTION[section], ...baseFilters] : baseFilters;
+    current = null;
+    poolLine.replaceChildren(
+      `Gekozen uit ${pool.length} ${pool.length === 1 ? 'game' : 'games'} in je backlog`,
+      filtersOn.length ? ` (filter: ${filtersOn.join(', ')})` : '');
+    rerollBtn.hidden = pool.length < 2;
+    body.replaceChildren(stage, poolLine, h('div', { class: 'gb-pick-actions' }, playBtn, detailBtn, rerollBtn, backBtn));
+    roll();
+  }
+
+  function choose() {
+    clearInterval(spinTimer);
+    body.replaceChildren(
+      h('p', { class: 'gb-pick-ask' }, 'Wat wil je spelen?'),
+      h('div', { class: 'gb-pick-choices' },
+        bySection.map(({ key, games }) => h('button', {
+          type: 'button', class: 'gb-pick-choice', dataset: { section: key }, disabled: !games.length,
+          onClick: () => start(key),
+        },
+        h('span', { class: 'gb-pick-choice-label' }, SECTION[key]),
+        h('span', { class: 'gb-pick-choice-count muted' },
+          games.length ? `${games.length} ${games.length === 1 ? 'game' : 'games'} in je backlog` : 'Niets in je backlog')))),
+      baseFilters.length ? h('p', { class: 'gb-pick-pool muted' }, `Filter: ${baseFilters.join(', ')}`) : null);
+    body.querySelector('.gb-pick-choice:not([disabled])')?.focus();
+  }
+
   function roll() {
     clearInterval(spinTimer);
     const choice = pickOne(pool, current?.id);
     current = choice;
-    const buttons = [rerollBtn, detailBtn, playBtn];
+    const buttons = [rerollBtn, detailBtn, playBtn, backBtn];
     if (calm || pool.length < 3) { drawResult(choice); return; }
     // Korte "fruitautomaat": een paar titels voorbij laten flitsen
     buttons.forEach((b) => { b.disabled = true; });
@@ -850,16 +888,12 @@ function openPicker(ctx, all) {
     h('div', { class: 'sheet-header' },
       h('h2', { id: 'gb-pick-head' }, 'Wat ga ik nu spelen?'),
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Sluiten', onClick: () => dlg.close() }, '✕')),
-    h('div', { class: 'sheet-body gb-pick-body' },
-      stage,
-      h('p', { class: 'gb-pick-pool muted' },
-        `Gekozen uit ${pool.length} ${pool.length === 1 ? 'game' : 'games'} in je backlog`,
-        filtersOn.length ? ` (filter: ${filtersOn.join(', ')})` : ''),
-      h('div', { class: 'gb-pick-actions' }, playBtn, detailBtn, rerollBtn)));
+    body);
   dlg.addEventListener('close', () => { clearInterval(spinTimer); dlg.remove(); });
   document.body.append(dlg);
   dlg.showModal();
-  roll();
+  if (choosable) choose();
+  else start('');
 }
 
 /* ---------- Bewerken ---------- */

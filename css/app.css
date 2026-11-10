@@ -763,8 +763,27 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
 .gb-pick-actions .btn[hidden] { display: none; }
 @media (min-width: 640px) {
   .gb-pick-actions { grid-template-columns: 1fr 1fr; }
-  .gb-pick-actions .btn-primary { grid-column: 1 / -1; }
+  .gb-pick-actions .btn-primary, .gb-pick-actions .gb-pick-back { grid-column: 1 / -1; }
 }
+/* Eerste stap: Modern of Retro */
+.gb-pick-ask { margin: 0; text-align: center; font-size: 1.15rem; font-weight: 700; }
+.gb-pick-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gb-pick-choice {
+  display: grid; gap: 6px; justify-items: center; align-content: center;
+  min-height: 140px; padding: 18px 12px; border-radius: 16px; cursor: pointer;
+  font: inherit; color: var(--text); text-align: center;
+  border: 1px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--brand-gradient) border-box;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.gb-pick-choice:hover:not([disabled]), .gb-pick-choice:focus-visible {
+  background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--brand-gradient) border-box;
+  outline: none;
+}
+.gb-pick-choice:active:not([disabled]) { transform: scale(0.97); }
+.gb-pick-choice[disabled] { opacity: 0.45; cursor: default; background: var(--surface); border-color: var(--border); }
+.gb-pick-choice-label { font-size: 1.4rem; font-weight: 700; }
+.gb-pick-choice-count { font-size: 0.8125rem; }
 @media (prefers-reduced-motion: reduce) {
   .gb-pick-blank { animation: none; }
 }

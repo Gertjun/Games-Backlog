@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.32.0
+
+- **Eerst kiezen: Modern of Retro.** Tik je op *Wat ga ik nu spelen?*, dan kies je eerst of je een moderne of een retro game wilt spelen. Daarna kiest de app alleen binnen die categorie. Bij elke keuze zie je hoeveel games er in je backlog staan.
+  - Met *Andere categorie* ga je terug naar de keuze.
+  - Staat het filter *Categorie* al op Modern of Retro, of staat er maar in één categorie iets in je backlog, dan sla je deze stap over.
+
 ## 1.31.0
 
 - **Ingeklapte groepen blijven ingeklapt.** Welke series, platforms of jaren je hebt ingeklapt, wordt nu ook per apparaat onthouden, net als de filters en de sortering. Elke weergave (*Per serie*, *Per platform*, *Per releasejaar*) houdt zijn eigen ingeklapte groepen.
