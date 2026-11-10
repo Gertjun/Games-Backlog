@@ -13,7 +13,9 @@
 //      van de serie (zoals bij Serie toevoegen).
 // Of je een game al hebt, kijkt de app in je hele lijst (niet alleen in die
 // serie): op de Wikidata-pagina en op titel, waarbij "Remastered", "HD",
-// "Definitive Edition" en dergelijke niet meetellen.
+// "3D", "DX", "Definitive Edition" en dergelijke niet meetellen, en een korte
+// titel ("Majora's Mask 3D") ook telt voor de lange ("The Legend of Zelda:
+// Majora's Mask").
 //
 // Resultaten staan alleen in het geheugen (deze sessie). Alleen
 // Wikidata-nummers van games en de namen van je series gaan naar Wikidata.
@@ -47,18 +49,42 @@ export function titleKey(t) {
     .join(' ');
 }
 
-/** Staat deze Wikidata-game (in een of andere versie) al in je lijst? */
-export function isOwned(wd, mine) {
+/** Titel zonder toevoegingen aan het eind: "ocarina of time 3d" → "ocarina of time". */
+function coreKey(k) {
+  const w = k.split(' ');
+  while (w.length > 1 && EDITION.has(w[w.length - 1])) w.pop();
+  return w.join(' ');
+}
+
+/** Is `short` het eind van `long`, met een voorvoegsel dat de serienaam bevat? */
+function endsWithTitle(long, short, groupKey) {
+  if (!short || long === short || !long.endsWith(` ${short}`)) return long === short;
+  const words = short.split(' ').length;
+  if (words >= 3) return true;
+  // Twee woorden ("majoras mask") alleen als het weggelaten stuk de serie
+  // noemt ("legend of zelda"), anders is het te makkelijk een andere game.
+  const prefix = ` ${long.slice(0, -short.length - 1)} `;
+  return words === 2 && Boolean(groupKey) && groupKey.split(' ').every((w) => prefix.includes(` ${w} `));
+}
+
+/**
+ * Staat deze Wikidata-game (in een of andere versie) al in je lijst?
+ * `group`: de serie waarin gezocht wordt (bijvoorbeeld "Zelda").
+ */
+export function isOwned(wd, mine, group = '') {
   if (wd.qid && mine.qids.has(wd.qid)) return true;
   const k = titleKey(wd.title);
   if (!k) return false;
   if (mine.keys.has(k)) return true;
+  const kc = coreKey(k);
+  const gk = titleKey(group).replace(/^legend of /, '');
   for (const m of mine.keys) {
-    // Jouw titel is dezelfde game met een toevoeging: "… Remastered", "… HD"
-    if (m.startsWith(`${k} `) && m.slice(k.length + 1).split(' ').every((w) => EDITION.has(w))) return true;
-    // Jouw titel is korter maar duidelijk dezelfde: "Zelda Breath of the Wild"
-    // bij "The Legend of Zelda: Breath of the Wild"
-    if (m.split(' ').length >= 3 && k.endsWith(` ${m}`)) return true;
+    const mc = coreKey(m);
+    // Dezelfde game met een toevoeging: "… Remastered", "… HD", "… 3D", "… DX"
+    if (mc === kc) return true;
+    // Jouw titel is korter maar duidelijk dezelfde: "Ocarina of Time 3D" of
+    // "Zelda Breath of the Wild" bij "The Legend of Zelda: …"
+    if (endsWithTitle(kc, mc, gk) || endsWithTitle(k, m, gk)) return true;
   }
   return false;
 }
@@ -245,7 +271,7 @@ export function renderSeriesCheck(deps) {
   const fits = (wd) => !state.onlyMine || wd.options.some((p) => myPlatforms.has(p));
   const rows = [...state.results.values()]
     .map((r) => {
-      const missing = r.games.filter((wd) => !isOwned(wd, mine));
+      const missing = r.games.filter((wd) => !isOwned(wd, mine, r.group));
       return { ...r, missing: missing.filter(fits), hidden: missing.length - missing.filter(fits).length };
     })
     .sort((a, b) => a.group.localeCompare(b.group, 'nl'));

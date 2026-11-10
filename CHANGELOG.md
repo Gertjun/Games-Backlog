@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.29.1
+
+- **Series controleren herkent meer games die je al hebt.** Een andere versie onder een iets andere titel telt nu als dezelfde game, zodat je geen dubbele kaarten meer toevoegt:
+  - Toevoegingen als *3D* en *DX* tellen niet mee, net als *Remastered* en *HD* al deden. *Ocarina of Time 3D* telt dus voor *The Legend of Zelda: Ocarina of Time*.
+  - Een korte titel van twee woorden telt ook, als het weggelaten stuk de naam van de serie is. *Majora's Mask* en *Link's Awakening* tellen dus voor *The Legend of Zelda: Majora's Mask* en *The Legend of Zelda: Link's Awakening*. Voorheen gold dit alleen voor titels van drie woorden of meer.
+
 ## 1.29.0
 
 - **Meerdere platforms op één kaart splitsen.** Op Controle staat een nieuwe melding *Meerdere platforms*: games waarbij meer dan één platform op dezelfde kaart staat, zoals *Ocarina of Time* met N64, GC, Wii en 3DS (vaak zo toegevoegd via *Series controleren*) of *Link's Awakening/Link's Awakening DX*.
