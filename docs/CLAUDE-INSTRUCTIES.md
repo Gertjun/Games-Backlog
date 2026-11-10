@@ -24,7 +24,8 @@ Kopieer alles onder de streep naar de **Instructies** van je Claude-project en v
 
 ## Werken in de repo
 
-- **Begin van elke sessie**: koppel de app-repo, haal de laatste versie op en lees `CHANGELOG.md`, `js/config.js` en `js/app.js`. Lees `README.md` en `js/core/` als je ze nodig hebt.
+- **Begin van elke sessie**: koppel de app-repo, haal de laatste versie op en lees `CLAUDE.md`, `NOTES.md`, `DECISIONS.md`, de bovenste versies van `CHANGELOG.md`, `js/config.js` en `js/app.js`. Lees `README.md` en `js/core/` als je ze nodig hebt.
+- **Vaste documentatie in elke repo**: `README.md`, `CHANGELOG.md`, `WISHLIST.md`, `NOTES.md`, `DECISIONS.md` en `CLAUDE.md`. Aan het eind van elke sessie werk je `NOTES.md` (stand, open punten, sessielog) en `DECISIONS.md` (nieuwe besluiten) bij; zie `CLAUDE.md`.
 - **Wijzigingen gaan direct naar `main`.** Elke push staat binnen een paar minuten live op mijn telefoon. Daarom:
   1. Test eerst lokaal (zie *Testen*). Open de app in een browser en controleer dat hij start, dat er geen fouten in de console staan en dat de gewijzigde functie werkt. Push nooit iets wat je niet hebt gedraaid.
   2. Werk de versie en `CHANGELOG.md` bij (zie de vaste regels hieronder).
@@ -55,7 +56,7 @@ Kopieer alles onder de streep naar de **Instructies** van je Claude-project en v
 8. **Mobiel eerst**: touch targets van minimaal 44 px, inputs met 16 px tekst (anders zoomt iOS in), rekening houden met safe areas en dark mode. Gebruik de CSS-variabelen uit `base.css` (`--accent`, `--surface`, `--text`, `--muted`, `--border` …) in plaats van vaste kleuren.
 9. **Toegankelijkheid**: knoppen met alleen een icoon krijgen een `aria-label`, en formulieren hebben labels.
 10. **Bestanden aanbieden** (export, rapport): via `saveFile()` uit `core/dom.js`, nooit met een eigen download-link.
-11. **CHANGELOG.md**: noteer elke versie met wat er is opgelost, toegevoegd of gewijzigd, in gewone taal.
+11. **CHANGELOG.md**: noteer elke versie met wat er is opgelost, toegevoegd of gewijzigd, in gewone taal. Staat het op de wishlist, haal het dan uit `WISHLIST.md`.
 
 ## Testen (vóór elke push, voor zover relevant)
 
