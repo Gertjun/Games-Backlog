@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.28.1
+
+- **Uitgespeelde games onderaan elke groep.** Bij *Per serie*, *Per platform* en *Per releasejaar* staan de games met status *Uitgespeeld* nu altijd onderaan hun groep. Wat je nog moet spelen zie je zo meteen bovenaan.
+  - De gekozen sortering (bijvoorbeeld A–Z of Metascore) blijft gelden, apart voor het deel dat nog open staat en het deel dat is uitgespeeld.
+  - Bij *Eén lijst* en de *Boxart-muur* verandert er niets.
+
 ## 1.28.0
 
 - **Metascore (handmatig)** is de nieuwe naam van het veld *Eigen score*. Het doet hetzelfde: vond de app geen Metascore, of de verkeerde, dan vul je hem zelf in bij *Bewerken* of direct op Controle, en dan gebruikt de app die overal.

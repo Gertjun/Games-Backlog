@@ -392,9 +392,18 @@ function filterGames(list, f) {
     && (!q || [g.title, g.group, ...(g.platforms || []), ...(g.years || []), g.playedOn, g.notes].join(' ').toLowerCase().includes(q)));
 }
 
-// inGroup: binnen één serie geldt bij 'Lijstvolgorde' gewoon de volgorde van
-// je lijst, zonder modern eerst (anders staat bijvoorbeeld FF XVI vóór FF I).
+// inGroup: binnen één groep (serie, platform of jaar) geldt bij 'Lijstvolgorde'
+// gewoon de volgorde van je lijst, zonder modern eerst (anders staat
+// bijvoorbeeld FF XVI vóór FF I). Uitgespeelde games komen binnen een groep
+// altijd onderaan, met daarbinnen dezelfde sortering.
 function sortGames(list, inGroup = false) {
+  const sorted = sortBy(list, inGroup);
+  if (!inGroup) return sorted;
+  const done = (g) => (g.status === 'done' ? 1 : 0);
+  return sorted.sort((a, b) => done(a) - done(b)); // stabiel: volgorde blijft verder gelijk
+}
+
+function sortBy(list, inGroup) {
   const byTitle = (a, b) => collator.compare(a.title, b.title);
   const copy = [...list];
   if (view.sort === 'title') return copy.sort(byTitle);
