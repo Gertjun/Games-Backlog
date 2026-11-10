@@ -8,7 +8,11 @@
 //     Remastered), of het releasejaar wijkt meer dan een jaar af van het jaar
 //     op de kaart (bijvoorbeeld 2011 bij Skyrim Anniversary Edition uit 2021);
 //   - het jaar of het platform ontbreekt;
-//   - er geen boxart is.
+//   - er geen boxart is;
+//   - er meerdere platforms op één kaart staan (bijvoorbeeld N64, GC, Wii en
+//     3DS bij Ocarina of Time). Met Splitsen wordt elk platform een eigen,
+//     gekoppelde kaart (js/split.js); met "Klopt zo" blijft het één kaart
+//     (veld oneCard op de game).
 // Score en boxart worden pas beoordeeld als de informatie is opgehaald.
 //
 // Oplossen kan direct in de lijst: een handmatige Metascore, een jaar of een platform
@@ -22,12 +26,14 @@
 import { h } from './core/dom.js';
 import { findById, updateById } from './core/records.js';
 import { renderSeriesCheck } from './series-check.js';
+import { openSplit } from './split.js';
 
 export const ISSUE_GROUPS = [
   ['score', 'Geen score'],
   ['version', 'Mogelijk andere versie'],
   ['meta', 'Geen jaar of platform'],
   ['art', 'Geen boxart'],
+  ['multi', 'Meerdere platforms'],
 ];
 
 /* ---------- Herkennen ---------- */
@@ -36,7 +42,7 @@ const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9,
 const STOP = new Set(['the', 'of', 'a', 'an', 'and', 'part', 'video', 'game']);
 const SAME = { remastered: 'remake', remaster: 'remake', remade: 'remake' };
 
-function titleWords(t) {
+export function titleWords(t) {
   return String(t || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().split(' ')
     .filter(Boolean)
@@ -61,6 +67,12 @@ export function findIssues(g, info) {
   const out = [];
   if (!g.platforms?.length) out.push({ key: 'platform', group: 'meta', label: 'Geen platform' });
   if (!g.years?.length) out.push({ key: 'year', group: 'meta', label: 'Geen jaar' });
+  if ((g.platforms || []).length > 1 && !g.oneCard) {
+    out.push({
+      key: 'multi', group: 'multi', label: 'Meerdere platforms op één kaart',
+      detail: 'Elke versie een eigen kaart? Tik op Splitsen. Is het echt één game op meerdere platforms, tik dan op Klopt zo.',
+    });
+  }
   if (!isFetched(g, info)) return out;
 
   if (!g.myScore && !hasFetchedScore(info)) {
@@ -219,6 +231,7 @@ function item(g, issues, deps) {
     }, h('option', { value: '' }, 'Kies…'), deps.platforms.map((p) => h('option', { value: p }, p)))) : null;
 
   const version = issues.find((i) => i.key === 'version');
+  const multi = issues.find((i) => i.key === 'multi');
   const done = !issues.length;
 
   return h('li', { class: 'card gb-check-item', dataset: { done: done ? 'yes' : null } },
@@ -236,6 +249,14 @@ function item(g, issues, deps) {
     issues.filter((i) => i.detail).map((i) => h('p', { class: 'gb-check-detail' }, i.detail)),
     done ? null : h('div', { class: 'gb-check-fields' }, scoreField, yearField, platformField),
     done ? null : h('div', { class: 'button-row gb-check-actions' },
+      multi ? h('button', {
+        type: 'button', class: 'btn btn-small btn-primary', dataset: { focus: `${g.id}:split` },
+        onClick: () => openSplit(ctx, g.id),
+      }, 'Splitsen…') : null,
+      multi ? h('button', {
+        type: 'button', class: 'btn btn-small btn-ghost', dataset: { focus: `${g.id}:onecard` },
+        onClick: () => save({ oneCard: true }),
+      }, 'Klopt zo') : null,
       version ? h('button', {
         type: 'button', class: 'btn btn-small btn-ghost', dataset: { focus: `${g.id}:ok` },
         onClick: () => {

@@ -19,6 +19,9 @@
 // 1.6.0: games zonder jaarlabel krijgen het releasejaar uit gameInfo.
 //   Optioneel veld `noAutoYear: true` = jaar zelf weggehaald, niet aanvullen.
 //   Geen schemawijziging: oudere versies laten het veld gewoon staan.
+// 1.29.0: optioneel veld `oneCard: true` = op Controle bevestigd dat meerdere
+//   platforms op één kaart klopt (geen melding "Meerdere platforms"). Ook geen
+//   schemawijziging, om dezelfde reden.
 
 import { h, today } from './core/dom.js';
 import { dropdown } from './dropdown.js';

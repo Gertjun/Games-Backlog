@@ -1278,3 +1278,28 @@ button.gb-an-row:focus-visible, .gb-an-chip:focus-visible, .gb-an-topbtn:focus-v
 .gb-suggest-link .btn { flex: none; }
 .gb-suggest-ptags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 0; }
 .gb-suggest-ptags-label { font-size: 0.8125rem; margin-right: 2px; }
+
+/* Splitsen: meerdere platforms op één kaart → losse, gekoppelde kaarten */
+.gb-issue[data-group="multi"] { --ic: var(--accent); }
+.gb-split-game { margin: 4px 0 8px; font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; }
+.gb-split-form { display: grid; gap: 12px; }
+.gb-split-form .gb-form-hint { margin: 0; }
+.gb-split-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.gb-split-row { display: grid; gap: 10px; padding: 12px 14px; min-width: 0; }
+.gb-split-row[data-keep="no"] > :not(.gb-split-head) { display: none; }
+.gb-split-row[data-keep="no"] .gb-ptag { opacity: 0.5; text-decoration: line-through; }
+.gb-split-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.gb-split-check { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.gb-split-check input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+.gb-split-badge {
+  display: none; font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.gb-split-row[data-first="yes"] .gb-split-badge { display: inline-block; }
+.gb-split-fields { display: grid; grid-template-columns: 1fr 96px; gap: 10px; }
+.gb-split-fields[hidden] { display: none; }
+.gb-split-fields input, .gb-split-choice select { font-size: 16px; }
+.gb-split-year input { -moz-appearance: textfield; appearance: textfield; }
+.gb-split-year input::-webkit-inner-spin-button,
+.gb-split-year input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.gb-split-summary { margin: 0; font-size: 0.875rem; }

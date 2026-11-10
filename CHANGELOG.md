@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.29.0
+
+- **Meerdere platforms op één kaart splitsen.** Op Controle staat een nieuwe melding *Meerdere platforms*: games waarbij meer dan één platform op dezelfde kaart staat, zoals *Ocarina of Time* met N64, GC, Wii en 3DS (vaak zo toegevoegd via *Series controleren*) of *Link's Awakening/Link's Awakening DX*.
+  - Tik op **Splitsen…** en je ziet per platform een voorstel met titel en jaar. Pas ze gerust aan. Bij een titel als "Titel A/Titel B" krijgt elke versie zijn eigen titel en jaar.
+  - Staat een versie al als eigen kaart in je lijst (bijvoorbeeld *Ocarina of Time 3D* op de 3DS), dan stelt de app voor om die te **koppelen** in plaats van een dubbele kaart te maken.
+  - Vink een platform uit als het niet op je lijst hoort, bijvoorbeeld een heruitgave. Het gaat dan alleen van de kaart af.
+  - De eerste aangevinkte versie blijft de bestaande kaart, met je status, beoordeling, notities, score en boxart. De andere versies krijgen een eigen kaart met status Backlog in dezelfde serie, gekoppeld als *Andere versies*. Score en boxart worden daarna opgehaald.
+  - Is het echt één game op meerdere platforms (bijvoorbeeld PS2 en Xbox)? Tik op **Klopt zo**, dan verdwijnt de melding voor die game.
+
 ## 1.28.1
 
 - **Uitgespeelde games onderaan elke groep.** Bij *Per serie*, *Per platform* en *Per releasejaar* staan de games met status *Uitgespeeld* nu altijd onderaan hun groep. Wat je nog moet spelen zie je zo meteen bovenaan.
