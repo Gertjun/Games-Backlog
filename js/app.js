@@ -50,7 +50,7 @@ const SECTION = { modern: 'Modern', retro: 'Retro' };
 const NO_SERIES = 'Overig';
 
 // Filters gelden alleen voor deze sessie (niet opgeslagen buiten de kluis).
-// grouped: per serie, per platform, als één lijst of als boxart-muur;
+// grouped: per serie, per platform, per releasejaar, als één lijst of als boxart-muur;
 // sort geldt binnen elke groep.
 const view = { q: '', status: '', section: '', group: '', platform: '', year: '', grouped: 'yes', sort: 'list' };
 
@@ -267,7 +267,7 @@ export const app = {
         menu('platform', 'Platform', () => [['', 'Alle platforms'], ...uniq(all.flatMap((g) => g.platforms)).map((v) => [v, v])], countFor('platform')),
         menu('year', 'Jaar van release', () => [['', 'Alle jaren'], ...uniqYears(all.flatMap((g) => g.years || [])).map((v) => [String(v), String(v)])], countFor('year')))),
       group('view', 'Weergave',
-        menu('grouped', 'Weergave', () => [['yes', 'Per serie'], ['platform', 'Per platform'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
+        menu('grouped', 'Weergave', () => [['yes', 'Per serie'], ['platform', 'Per platform'], ['year', 'Per releasejaar'], ['no', 'Eén lijst'], ['wall', 'Boxart-muur']])),
       group('sort', 'Sorteren',
         menu('sort', 'Sorteren', () => [['list', 'Lijstvolgorde'], ['title', 'A–Z'], ['year', 'Jaar van release'], ['score', 'Metascore'], ['recent', 'Laatst gewijzigd'], ['rating', 'Beoordeling']])));
 
@@ -415,38 +415,84 @@ function renderList(el, all, ctx) {
     el.replaceChildren(h('ul', { class: 'gb-wall', 'aria-label': 'Boxart-muur' }, sortGames(filtered).map((g) => wallTile(g, ctx))));
     return;
   }
-  if (view.grouped === 'platform') {
-    renderByPlatform(el, filtered, ctx);
-    return;
-  }
-  if (view.grouped !== 'yes') {
+  if (view.grouped !== 'yes' && view.grouped !== 'platform' && view.grouped !== 'year') {
     el.replaceChildren(h('ul', { class: 'card gb-games' }, sortGames(filtered).map((g) => gameRow(g, ctx))));
     return;
   }
-  // Eén kop per serie, ongeacht Modern of Retro: Final Fantasy staat dus één
-  // keer in de lijst, met de oude én de nieuwe delen. De series staan in de
-  // volgorde van je lijst (een serie komt op de plek van zijn eerste game);
-  // Overig, de games zonder serie, staat altijd onderaan.
-  // De gekozen sortering geldt binnen elke serie.
+  const groups = view.grouped === 'platform' ? groupByPlatform(filtered)
+    : view.grouped === 'year' ? groupByYear(filtered) : groupBySeries(filtered);
+  renderGroups(el, view.grouped, groups, ctx);
+}
+
+// Ingeklapte groepen per weergave (serie, platform, jaar). Net als de filters
+// alleen voor deze sessie: niets buiten de kluis opslaan.
+const collapsed = { yes: new Set(), platform: new Set(), year: new Set() };
+
+// Tekent de groepen met een kop die je kunt aantikken om de groep in of uit te
+// klappen, plus bovenaan één knop om alles tegelijk in of uit te klappen.
+// groups: [{ key, label (tekst of nodes), items }]
+function renderGroups(el, kind, groups, ctx) {
+  const shut = collapsed[kind];
+  const toggles = [];
+  const allBtn = h('button', { type: 'button', class: 'gb-collapse-all' });
+  const updateAll = () => {
+    const allShut = groups.every((gr) => shut.has(gr.key));
+    allBtn.textContent = allShut ? 'Alles uitklappen' : 'Alles inklappen';
+    allBtn.onclick = () => {
+      groups.forEach((gr) => (allShut ? shut.delete(gr.key) : shut.add(gr.key)));
+      toggles.forEach((t) => t.sync());
+      updateAll();
+    };
+  };
+  const sections = groups.map(({ key, label, items }, i) => {
+    const id = `gb-grp-${kind}-${i}`;
+    const list = h('ul', { class: 'card gb-games', id }, sortGames(items, true).map((g) => gameRow(g, ctx)));
+    const btn = h('button', { type: 'button', class: 'gb-group-toggle', 'aria-controls': id },
+      h('span', { class: 'gb-chev', 'aria-hidden': 'true' }),
+      h('span', { class: 'gb-group-name' }, label),
+      h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`));
+    const section = h('section', { class: 'gb-group' }, h('h2', { class: 'gb-group-head' }, btn), list);
+    const sync = () => {
+      const open = !shut.has(key);
+      btn.setAttribute('aria-expanded', String(open));
+      list.hidden = !open;
+      section.classList.toggle('is-collapsed', !open);
+    };
+    btn.addEventListener('click', () => {
+      if (shut.has(key)) shut.delete(key); else shut.add(key);
+      sync();
+      updateAll();
+    });
+    sync();
+    toggles.push({ sync });
+    return section;
+  });
+  updateAll();
+  el.replaceChildren(h('div', { class: 'gb-list-tools' }, allBtn), ...sections);
+}
+
+// Eén kop per serie, ongeacht Modern of Retro: Final Fantasy staat dus één
+// keer in de lijst, met de oude én de nieuwe delen. De series staan in de
+// volgorde van je lijst (een serie komt op de plek van zijn eerste game);
+// Overig, de games zonder serie, staat altijd onderaan.
+// De gekozen sortering geldt binnen elke serie.
+function groupBySeries(filtered) {
   const groups = new Map();
   filtered.forEach((g, i) => {
     const key = g.group?.trim() || NO_SERIES;
     if (!groups.has(key)) groups.set(key, { items: [], first: i });
     groups.get(key).items.push(g);
   });
-  const ordered = [...groups].sort(([ka, a], [kb, b]) => (ka === NO_SERIES) - (kb === NO_SERIES) || a.first - b.first);
-  el.replaceChildren(...ordered.map(([name, { items }]) => h('section', { class: 'gb-group' },
-    h('h2', { class: 'gb-group-head' },
-      h('span', {}, name),
-      h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
-    h('ul', { class: 'card gb-games' }, sortGames(items, true).map((g) => gameRow(g, ctx))))));
+  return [...groups]
+    .sort(([ka, a], [kb, b]) => (ka === NO_SERIES) - (kb === NO_SERIES) || a.first - b.first)
+    .map(([key, { items }]) => ({ key, label: key, items }));
 }
 
 // Per platform: één kop per console, op volgorde van verschijnen (NES eerst).
 // Een game op meer platforms staat onder elk van die platforms. Games zonder
 // platform staan onderaan onder "Geen platform".
 const NO_PLATFORM = 'Geen platform';
-function renderByPlatform(el, filtered, ctx) {
+function groupByPlatform(filtered) {
   const groups = new Map();
   for (const g of filtered) {
     const list = (g.platforms || []).filter(Boolean);
@@ -456,13 +502,27 @@ function renderByPlatform(el, filtered, ctx) {
     }
   }
   const rank = (p) => (p === NO_PLATFORM ? Infinity : platformRank(p));
-  const ordered = [...groups].sort(([a], [b]) => rank(a) - rank(b) || collator.compare(a, b));
-  el.replaceChildren(...ordered.map(([name, items]) => h('section', { class: 'gb-group' },
-    h('h2', { class: 'gb-group-head' },
-      h('span', { class: 'gb-group-plat', dataset: name === NO_PLATFORM ? {} : { platform: platformKey(name) } },
-        name === NO_PLATFORM ? null : platformIcon(name), name),
-      h('span', { class: 'gb-group-count' }, `${items.filter((g) => g.status === 'done').length}/${items.length}`)),
-    h('ul', { class: 'card gb-games' }, sortGames(items, true).map((g) => gameRow(g, ctx))))));
+  return [...groups].sort(([a], [b]) => rank(a) - rank(b) || collator.compare(a, b))
+    .map(([key, items]) => ({
+      key, items,
+      label: h('span', { class: 'gb-group-plat', dataset: key === NO_PLATFORM ? {} : { platform: platformKey(key) } },
+        key === NO_PLATFORM ? null : platformIcon(key), key),
+    }));
+}
+
+// Per releasejaar: op het eerste jaar van release, oudste eerst. Games zonder
+// jaar staan onderaan onder "Geen jaar".
+const NO_YEAR = 'Geen jaar';
+function groupByYear(filtered) {
+  const groups = new Map();
+  for (const g of filtered) {
+    const years = (g.years || []).map(Number).filter(isYear);
+    const key = years.length ? String(Math.min(...years)) : NO_YEAR;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(g);
+  }
+  const num = (k) => (k === NO_YEAR ? Infinity : Number(k));
+  return [...groups].sort(([a], [b]) => num(a) - num(b)).map(([key, items]) => ({ key, label: key, items }));
 }
 
 function gameRow(g, ctx) {

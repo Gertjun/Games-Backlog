@@ -134,16 +134,37 @@ body { background-color: var(--bg); }
 
 .gb-list { padding-bottom: calc(88px + var(--safe-bottom)); }
 .gb-group-head {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  margin: 8px 4px; font-size: 0.8rem; font-weight: 600;
+  margin: 0 0 4px; font-size: 0.8rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
 }
+/* De hele kop is een knop: tik om de groep in of uit te klappen. */
+.gb-group-toggle {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--tap);
+  padding: 0 4px; margin: 0; background: none; border: 0; border-radius: 8px;
+  font: inherit; text-transform: inherit; letter-spacing: inherit; color: inherit;
+  text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.gb-group-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gb-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gb-chev {
+  flex: none; width: 7px; height: 7px; margin: 0 3px 2px 1px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); transition: transform 0.15s;
+}
+.gb-group-toggle[aria-expanded="false"] .gb-chev { transform: rotate(-45deg); margin-bottom: 0; }
 .gb-group-count { font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; }
-.gb-group + .gb-group { margin-top: 16px; }
+.gb-group + .gb-group { margin-top: 8px; }
+.gb-group.is-collapsed .gb-group-head { margin-bottom: 0; }
+.gb-games[hidden] { display: none; }
+.gb-list-tools { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+.gb-collapse-all {
+  min-height: var(--tap); padding: 0 8px; background: none; border: 0; border-radius: 8px;
+  font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--accent); cursor: pointer;
+}
+.gb-collapse-all:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .gb-group-plat { --pc: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
 .gb-group-plat[data-platform] { color: color-mix(in srgb, var(--pc) 72%, var(--text)); }
 .gb-group-plat .gb-picon { width: 16px; height: 16px; }
-.gb-group-head:has(.gb-group-plat) { align-items: center; }
 .gb-games { list-style: none; margin: 0; padding: 0; overflow: hidden; }
 
 .gb-game { display: flex; align-items: center; gap: 4px; padding-left: 8px; }
@@ -583,16 +604,19 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   }
   .gb-game + .gb-game { border-top: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border)); }
   .gb-body { align-self: stretch; align-content: center; }
-  .gb-group + .gb-group { margin-top: 24px; }
+  .gb-group + .gb-group { margin-top: 16px; }
+  .gb-group.is-collapsed + .gb-group { margin-top: 8px; }
+  .gb-group-head { margin-bottom: 6px; }
 }
 
 @media (min-width: 700px) and (hover: hover) {
   .gb-game:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); transform: translateY(-1px); }
   .gb-game + .gb-game:hover { border-top-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
   .gb-chip:hover:not([aria-selected="true"]) { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+  .gb-group-toggle:hover, .gb-collapse-all:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gb-game { transition: none; }
+  .gb-game, .gb-chev { transition: none; }
   .gb-game:hover { transform: none; }
 }
 
@@ -611,7 +635,7 @@ dialog.gb-detail::backdrop { background: rgb(0 0 0 / 0.5); }
   /* Zijbalk: elke groep onder elkaar, met een kop erboven */
   .gb-controls { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .gb-ctl-fields { grid-template-columns: minmax(0, 1fr); }
-  .gb-list .gb-group:first-child .gb-group-head { margin-top: 0; }
+  .gb-list-tools { margin-top: -10px; }
 }
 
 /* ---------- Hoesjes (boxart-muur en "Wat ga ik nu spelen?") ----------
