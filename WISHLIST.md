@@ -24,3 +24,10 @@ Ideeën voor nieuwe functies en verbeteringen. Gebouwde punten verhuizen naar `C
 
 13. **Dubbele games signaleren** — waarschuwing bij het toevoegen van een game met dezelfde titel en hetzelfde platform.
 14. **Export naar CSV** — naast de versleutelde back-up, om de lijst in Excel of Numbers te openen.
+
+## Bronnen
+
+15. **Boxart via TheGamesDB** — hoesjes eerst van TheGamesDB halen, met Wikipedia als terugval, en in de details kunnen kiezen uit andere hoesjes (bijvoorbeeld een andere regio).
+    - *Sleutel:* account op forums.thegamesdb.net, API-toegang aanvragen in het forum voor API-aanvragen, daarna de **Public API Key** ophalen op `api.thegamesdb.net/key.php`.
+    - *Let op:* de API staat geen verzoeken rechtstreeks vanuit de browser toe (CORS, getest november 2026). Daarom is een gratis Cloudflare Worker als tussenschakel nodig, met de sleutel daar als geheime variabele. Het adres van de Worker komt in Instellingen en in de kluis (datamodelwijziging). Afbeeldingen van `cdn.thegamesdb.net` kunnen wel direct getoond worden (toevoegen aan `img-src` in de CSP).
+    - *Alternatief:* ScreenScraper.fr heeft voor retro vaak betere media, maar vraagt naast je eigen account ook een ontwikkelaarsaccount (devid/devpassword).
