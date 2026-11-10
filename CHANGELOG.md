@@ -1,10 +1,16 @@
 # Changelog
 
+## 1.31.0
+
+- **Ingeklapte groepen blijven ingeklapt.** Welke series, platforms of jaren je hebt ingeklapt, wordt nu ook per apparaat onthouden, net als de filters en de sortering. Elke weergave (*Per serie*, *Per platform*, *Per releasejaar*) houdt zijn eigen ingeklapte groepen.
+  - *Alles inklappen* en *Alles uitklappen* worden ook onthouden.
+  - *Dit apparaat wissen* (Instellingen) wist deze keuzes ook.
+
 ## 1.30.0
 
 - **Filters en sortering blijven staan.** Status, categorie, serie, platform, jaar, *Weergave* en *Sorteren* worden per apparaat onthouden. Na ontgrendelen of opnieuw opstarten staat alles zoals je het achterliet.
   - Elk apparaat heeft zijn eigen keuzes: je iPhone kan bijvoorbeeld op *Boxart-muur* staan en je laptop op *Per serie*. Ze gaan niet mee met de synchronisatie via GitHub.
-  - Het zoekveld begint wel altijd leeg, en ingeklapte groepen gaan bij opnieuw opstarten nog steeds weer open.
+  - Het zoekveld begint wel altijd leeg.
   - Bestaat een bewaarde serie, platform of jaar niet meer in je lijst (bijvoorbeeld na hernoemen), dan valt dat filter vanzelf weg, zodat je geen lege lijst krijgt.
   - *Dit apparaat wissen* (Instellingen) wist deze keuzes ook.
 

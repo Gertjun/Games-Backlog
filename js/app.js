@@ -63,7 +63,7 @@ const view = { q: '', status: '', section: '', group: '', platform: '', year: ''
 // Per apparaat onthouden (1.30.0): filters, weergave en sortering staan in de
 // localStorage van dit apparaat, buiten de kluis en dus niet versleuteld en
 // niet gesynchroniseerd. Zo kan de iPhone anders staan dan de laptop. Het
-// zoekveld begint altijd leeg. "Dit apparaat wissen" (Instellingen) wist dit ook
+// zoekveld begint altijd leeg. Ingeklapte groepen: zie COLLAPSED_KEY. "Dit apparaat wissen" (Instellingen) wist dit ook
 // (zelfde prefix als de kluis, zie js/core/vault.js).
 const PREFS_KEY = `${APP.storagePrefix}:view`;
 const PREF_FIELDS = ['status', 'section', 'group', 'platform', 'year', 'grouped', 'sort'];
@@ -490,9 +490,24 @@ function renderList(el, all, ctx) {
   renderGroups(el, view.grouped, groups, ctx);
 }
 
-// Ingeklapte groepen per weergave (serie, platform, jaar). Alleen voor deze
-// sessie: bij opnieuw opstarten staat alles weer open.
+// Ingeklapte groepen per weergave (serie, platform, jaar). Sinds 1.31.0 ook
+// per apparaat onthouden, net als de filters (zie PREFS_KEY), onder een eigen
+// sleutel. Een groep die niet meer bestaat blijft er onschuldig in staan.
+const COLLAPSED_KEY = `${APP.storagePrefix}:collapsed`;
 const collapsed = { yes: new Set(), platform: new Set(), year: new Set() };
+try {
+  const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || 'null');
+  for (const kind of Object.keys(collapsed)) {
+    if (Array.isArray(saved?.[kind])) saved[kind].forEach((k) => collapsed[kind].add(k));
+  }
+} catch { /* geen of kapotte gegevens: alles open */ }
+
+function saveCollapsed() {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(Object.fromEntries(
+      Object.entries(collapsed).map(([kind, set]) => [kind, [...set]]))));
+  } catch { /* privémodus of vol: dan alleen voor deze sessie */ }
+}
 
 // Tekent de groepen met een kop die je kunt aantikken om de groep in of uit te
 // klappen, plus bovenaan één knop om alles tegelijk in of uit te klappen.
@@ -506,6 +521,7 @@ function renderGroups(el, kind, groups, ctx) {
     allBtn.textContent = allShut ? 'Alles uitklappen' : 'Alles inklappen';
     allBtn.onclick = () => {
       groups.forEach((gr) => (allShut ? shut.delete(gr.key) : shut.add(gr.key)));
+      saveCollapsed();
       toggles.forEach((t) => t.sync());
       updateAll();
     };
@@ -526,6 +542,7 @@ function renderGroups(el, kind, groups, ctx) {
     };
     btn.addEventListener('click', () => {
       if (shut.has(key)) shut.delete(key); else shut.add(key);
+      saveCollapsed();
       sync();
       updateAll();
     });
