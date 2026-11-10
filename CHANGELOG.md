@@ -4,7 +4,7 @@
 
 - **Groepen inklappen.** Bij *Per serie*, *Per platform* en *Per releasejaar* tik je op de kop van een groep (bijvoorbeeld *Zelda* of *SNES*) om die in of uit te klappen. Het pijltje voor de naam laat zien of de groep open is; het aantal uitgespeeld blijft zichtbaar.
 - Bovenaan de lijst staat **Alles inklappen** (of **Alles uitklappen** als alles al dicht is). Zo zie je eerst alleen de koppen en klap je open wat je wilt bekijken.
-- Elke weergave onthoudt zijn eigen ingeklapte groepen zolang de app open is. Na vergrendelen staat alles weer open, net als de filters.
+- Elke weergave onthoudt zijn eigen ingeklapte groepen zolang de app open is, net als de filters. Start de app opnieuw op, dan staat alles weer open.
 - **Nieuwe weergave: Per releasejaar.** Je games gegroepeerd op het eerste jaar van release, oudste eerst. Games zonder jaar staan onderaan onder *Geen jaar*.
 
 ## 1.25.0
