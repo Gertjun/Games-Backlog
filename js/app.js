@@ -30,6 +30,7 @@ import { openSeriesImport } from './series-dialog.js';
 import { attachSuggestions } from './suggest.js';
 import { currentScreen, onScreenChange, setCheckCount, select } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
+import { clearSeriesCheck } from './series-check.js';
 import { renderAnalysis } from './analysis.js';
 import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
@@ -935,6 +936,7 @@ function watchLock(root) {
     if (root.childElementCount) return;
     document.querySelectorAll('dialog.gb-modal').forEach((d) => d.close());
     stopEnrich();
+    clearSeriesCheck();
   });
   lockObserver.observe(root, { childList: true });
 }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.27.0
+
+- **Ontbrekende games in je series.** Op Controle staan bovenaan nu twee tabs: **Informatie** (wat er al was) en **Series**. Tik bij Series op *Series controleren* en de app kijkt bij elke serie in je lijst welke games er volgens Wikidata nog meer bij horen. Je hoeft de series niet zelf op te zoeken.
+  - De app herkent de serie aan de games die je al hebt (hun Wikipedia-pagina weet bij welke serie ze horen). Lukt dat niet, dan zoekt hij op de naam van de serie; dat zie je dan onder de serie staan.
+  - Of je een game al hebt, kijkt de app in je hele lijst. Een remaster, "HD" of "Definitive Edition" telt als dezelfde game, en "Mass Effect 1" als "Mass Effect".
+  - Standaard zie je alleen games voor platforms die je al in je lijst hebt. Zet het vinkje uit om ook de rest te zien (bijvoorbeeld mobiele games).
+  - Vink games aan, kies eventueel met de platformlabels welke platforms op de kaart komen, en tik op *Toevoegen*. Ze komen in die serie met status Backlog, en score en boxart worden daarna opgehaald.
+  - Series die compleet zijn en series die Wikidata niet kent staan onderaan. Games onder Overig worden niet bekeken.
+- Het resultaat blijft staan zolang de app open is; na vergrendelen is het weg en controleer je opnieuw.
+
 ## 1.26.0
 
 - **Groepen inklappen.** Bij *Per serie*, *Per platform* en *Per releasejaar* tik je op de kop van een groep (bijvoorbeeld *Zelda* of *SNES*) om die in of uit te klappen. Het pijltje voor de naam laat zien of de groep open is; het aantal uitgespeeld blijft zichtbaar.

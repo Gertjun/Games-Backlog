@@ -15,9 +15,13 @@
 // invullen, een andere Wikipedia-pagina kiezen, of bevestigen dat de gevonden
 // pagina klopt (veld confirmedPage op de game). Een opgeloste game blijft zichtbaar (met "Opgelost") tot je
 // het scherm verlaat, zodat de lijst niet onder je vinger verspringt.
+//
+// Bovenaan kies je tussen Informatie (hierboven) en Series: welke games uit
+// je series nog niet in je lijst staan (js/series-check.js).
 
 import { h } from './core/dom.js';
 import { findById, updateById } from './core/records.js';
+import { renderSeriesCheck } from './series-check.js';
 
 export const ISSUE_GROUPS = [
   ['score', 'Geen score'],
@@ -88,11 +92,18 @@ export function parseScore(v) {
 
 /* ---------- Scherm ---------- */
 
-const state = { filter: '' };
+const state = { filter: '', tab: 'info' }; // tab: 'info' of 'series'
 const seen = new Set(); // games die in deze sessie op Controle stonden
+let lastRender = null; // laatste root en deps, om na het ophalen van series opnieuw te tekenen
 
 /** Bij het verlaten van het scherm: opgeloste games mogen weer weg. */
 export function resetCheckSession() { seen.clear(); state.filter = ''; }
+
+/** Opnieuw tekenen terwijl de series worden opgehaald, maar alleen als Series nog in beeld is. */
+function redrawSeries() {
+  const l = lastRender;
+  if (l && state.tab === 'series' && l.root.isConnected && l.root.querySelector('.gb-sc')) renderCheck(l.root, l.deps);
+}
 
 /** Aantal games om na te kijken (voor het getal in de navigatie). */
 export const countIssues = (games, infoById) => games.filter((g) => findIssues(g, infoById.get(g.id)).length).length;
@@ -104,6 +115,7 @@ export const countIssues = (games, infoById) => games.filter((g) => findIssues(g
  */
 export function renderCheck(root, deps) {
   const { all, infoById, ctx } = deps;
+  lastRender = { root, deps };
 
   // Focus bewaren: opslaan gebeurt als je een veld verlaat, en daarna wordt
   // het scherm opnieuw getekend. Dan moet je in het volgende veld blijven.
@@ -116,6 +128,21 @@ export function renderCheck(root, deps) {
   for (const { g, issues } of rows) if (issues.length) seen.add(g.id);
 
   const open = rows.filter((r) => r.issues.length);
+
+  // Tabs: Informatie en Series
+  const tabs = h('div', { class: 'gb-check-tabs', role: 'tablist', 'aria-label': 'Wat controleren' },
+    [['info', 'Informatie', open.length], ['series', 'Series', null]].map(([key, label, n]) => h('button', {
+      type: 'button', role: 'tab', class: 'gb-check-tab', 'aria-selected': String(state.tab === key),
+      onClick: () => { if (state.tab !== key) { state.tab = key; renderCheck(root, deps); } },
+    }, label, n ? h('span', { class: 'gb-chip-n' }, String(n)) : null)));
+
+  if (state.tab === 'series') {
+    root.replaceChildren(h('div', { class: 'gb-check' },
+      h('header', { class: 'gb-check-head' }, h('h2', { class: 'gb-check-title' }, 'Controle')),
+      tabs,
+      renderSeriesCheck({ ctx, all: deps.all, infoById: deps.infoById, refresh: redrawSeries })));
+    return;
+  }
   const inGroup = (r, grp) => r.issues.some((i) => i.group === grp);
   if (state.filter && !open.some((r) => inGroup(r, state.filter)) && !rows.some((r) => !r.issues.length)) state.filter = '';
   const shown = state.filter ? rows.filter((r) => !r.issues.length || inGroup(r, state.filter)) : rows;
@@ -144,6 +171,7 @@ export function renderCheck(root, deps) {
           ? `${open.length} ${open.length === 1 ? 'game' : 'games'} met ontbrekende of onduidelijke informatie. Vul het hier aan, dan verdwijnt de game van deze lijst.`
           : 'Alles is compleet.'),
       deps.enrichNote),
+    tabs,
     open.length || seen.size ? chips : null,
     list));
 
