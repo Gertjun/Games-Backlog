@@ -24,6 +24,7 @@
 //   schemawijziging, om dezelfde reden.
 
 import { h, today } from './core/dom.js';
+import { APP } from './config.js';
 import { dropdown } from './dropdown.js';
 import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
 import { SEED } from './seed.js';
@@ -55,10 +56,49 @@ const SECTION = { modern: 'Modern', retro: 'Retro' };
 // Games die niet bij een serie horen, staan samen in deze groep (altijd onderaan).
 const NO_SERIES = 'Overig';
 
-// Filters gelden alleen voor deze sessie (niet opgeslagen buiten de kluis).
-// grouped: per serie, per platform, per releasejaar, als één lijst of als boxart-muur;
-// sort geldt binnen elke groep.
+// Filters, weergave en sortering. grouped: per serie, per platform, per
+// releasejaar, als één lijst of als boxart-muur; sort geldt binnen elke groep.
 const view = { q: '', status: '', section: '', group: '', platform: '', year: '', grouped: 'yes', sort: 'list' };
+
+// Per apparaat onthouden (1.30.0): filters, weergave en sortering staan in de
+// localStorage van dit apparaat, buiten de kluis en dus niet versleuteld en
+// niet gesynchroniseerd. Zo kan de iPhone anders staan dan de laptop. Het
+// zoekveld begint altijd leeg. "Dit apparaat wissen" (Instellingen) wist dit ook
+// (zelfde prefix als de kluis, zie js/core/vault.js).
+const PREFS_KEY = `${APP.storagePrefix}:view`;
+const PREF_FIELDS = ['status', 'section', 'group', 'platform', 'year', 'grouped', 'sort'];
+const GROUPED = ['yes', 'platform', 'year', 'no', 'wall'];
+const SORTS = ['list', 'title', 'year', 'score', 'recent', 'rating'];
+
+function loadPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+    if (!saved || typeof saved !== 'object') return;
+    for (const k of PREF_FIELDS) if (typeof saved[k] === 'string') view[k] = saved[k];
+  } catch { /* geen of kapotte voorkeuren: standaard gebruiken */ }
+  if (view.status && !(view.status in STATUS)) view.status = '';
+  if (view.section && !(view.section in SECTION)) view.section = '';
+  if (!GROUPED.includes(view.grouped)) view.grouped = 'yes';
+  if (!SORTS.includes(view.sort)) view.sort = 'list';
+}
+
+let savedPrefs = '';
+function savePrefs() {
+  const json = JSON.stringify(Object.fromEntries(PREF_FIELDS.map((k) => [k, view[k]])));
+  if (json === savedPrefs) return;
+  try { localStorage.setItem(PREFS_KEY, json); savedPrefs = json; } catch { /* privémodus of vol: dan alleen voor deze sessie */ }
+}
+
+// Een bewaard filter op een serie, platform of jaar dat niet meer in je lijst
+// voorkomt (bijvoorbeeld hernoemd) zou een lege lijst geven: dan valt het weg.
+function dropStaleFilters(all) {
+  if (!all.length) return; // lijst nog niet geladen: niets weggooien
+  if (view.group && !all.some((g) => (g.group?.trim() || NO_SERIES) === view.group)) view.group = '';
+  if (view.platform && !all.some((g) => (g.platforms || []).includes(view.platform))) view.platform = '';
+  if (view.year && !all.some((g) => (g.years || []).includes(Number(view.year)))) view.year = '';
+}
+
+loadPrefs();
 
 const collator = new Intl.Collator('nl', { numeric: true, sensitivity: 'base' });
 const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort(collator.compare);
@@ -251,7 +291,9 @@ export const app = {
       return m.el;
     };
 
+    dropStaleFilters(all);
     const refresh = () => {
+      savePrefs();
       renderChips(chipsEl, all, refresh);
       renderList(listEl, all, ctx);
       menus.forEach((m) => m.update());
@@ -448,8 +490,8 @@ function renderList(el, all, ctx) {
   renderGroups(el, view.grouped, groups, ctx);
 }
 
-// Ingeklapte groepen per weergave (serie, platform, jaar). Net als de filters
-// alleen voor deze sessie: niets buiten de kluis opslaan.
+// Ingeklapte groepen per weergave (serie, platform, jaar). Alleen voor deze
+// sessie: bij opnieuw opstarten staat alles weer open.
 const collapsed = { yes: new Set(), platform: new Set(), year: new Set() };
 
 // Tekent de groepen met een kop die je kunt aantikken om de groep in of uit te

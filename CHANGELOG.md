@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.30.0
+
+- **Filters en sortering blijven staan.** Status, categorie, serie, platform, jaar, *Weergave* en *Sorteren* worden per apparaat onthouden. Na ontgrendelen of opnieuw opstarten staat alles zoals je het achterliet.
+  - Elk apparaat heeft zijn eigen keuzes: je iPhone kan bijvoorbeeld op *Boxart-muur* staan en je laptop op *Per serie*. Ze gaan niet mee met de synchronisatie via GitHub.
+  - Het zoekveld begint wel altijd leeg, en ingeklapte groepen gaan bij opnieuw opstarten nog steeds weer open.
+  - Bestaat een bewaarde serie, platform of jaar niet meer in je lijst (bijvoorbeeld na hernoemen), dan valt dat filter vanzelf weg, zodat je geen lege lijst krijgt.
+  - *Dit apparaat wissen* (Instellingen) wist deze keuzes ook.
+
 ## 1.29.1
 
 - **Series controleren herkent meer games die je al hebt.** Een andere versie onder een iets andere titel telt nu als dezelfde game, zodat je geen dubbele kaarten meer toevoegt:
