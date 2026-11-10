@@ -21,7 +21,7 @@ const SYNC_MESSAGES = {
 const BIO_OFFER_KEY = `${APP.storagePrefix}:bio-offer-dismissed`;
 const SCHEMA_VERSION = app.schemaVersion ?? Infinity;
 
-let settings = null;     // apparaatinstellingen: { github, autoSync }
+let settings = null;     // apparaatinstellingen: { github, autoSync, autoLockMinutes }
 let blocked = false;     // gegevens zijn nieuwer dan deze app-versie
 let session = 0;         // telt ontgrendelingen (voor veilig vergrendelen)
 let syncTimer = null;
@@ -30,6 +30,7 @@ let hiddenAt = 0;
 let lastSyncAttempt = 0;
 let swRegistration = null;
 let persistRequested = false;
+let bioBusy = false;       // er loopt al een Face ID / passkey-poging
 
 // Wijzigingen lopen één voor één, zodat elke wijziging voortbouwt op de vorige
 // (ook bij heel snel klikken).
@@ -65,13 +66,31 @@ const ctx = {
   },
   toast,
   confirm: (msg) => window.confirm(msg),
+  /**
+   * Alleen bij een instellingenpaneel (#settings-panel) in de pagina: toont de
+   * secties met data-group="<group>" ('all' = alles), of verbergt het paneel (null).
+   */
+  showShellSettings: (group) => showSettingsPanel(group),
+  /** Is synchroniseren met de data-repo ingesteld (en niet gepauzeerd)? */
+  get syncConfigured() { return isSyncConfigured() && !blocked; },
+  /**
+   * Leest een ander (onversleuteld) bestand uit de data-repo, bijvoorbeeld iets
+   * wat een GitHub Action daar zet. Synchroniseert eerst de kluis, zodat wat een
+   * ander apparaat al verwerkt heeft hier ook is.
+   * @returns {Promise<{sha: string, text: string} | null>} null als sync niet is ingesteld of het bestand er niet is.
+   */
+  async readSyncFile(path) {
+    if (!isSyncConfigured() || blocked || !navigator.onLine) return null;
+    await runSync({ quiet: true });
+    return createClient({ ...settings.github, path }).getText();
+  },
 };
 
 export async function start() {
   document.title = APP.name;
   $$('[data-app-name]').forEach((el) => { el.textContent = APP.name; });
   $$('[data-min-length]').forEach((el) => { el.textContent = APP.minPasswordLength; });
-  $('#app-version').textContent = APP.version;
+  $$('#app-version').forEach((el) => { el.textContent = APP.version; });
   $$('[data-app-version]').forEach((el) => { el.textContent = `v${APP.version}`; });
   // Helpt wachtwoordmanagers het wachtwoord aan deze app te koppelen.
   $$('input[name=username]').forEach((el) => el.setAttribute('value', APP.name));
@@ -85,8 +104,10 @@ export async function start() {
   wireLifecycle();
   wireOtherTabs();
 
-  if (vault.hasVault()) showLock();
-  else showScreen('setup');
+  if (vault.hasVault()) {
+    showLock();
+    autoBiometricUnlock();
+  } else showScreen('setup');
 }
 
 // ---------- Hulpjes ----------
@@ -292,14 +313,43 @@ function wireLock() {
     }).catch((err) => showError('#lock-error', err.message));
   });
 
-  $('#btn-bio-unlock').addEventListener('click', async (e) => {
-    showError('#lock-error', '');
-    await withBusy(e.currentTarget, async () => {
+  $('#btn-bio-unlock').addEventListener('click', () => biometricUnlock());
+}
+
+/**
+ * Ontgrendelen met Face ID / passkey. Bij `auto` (vanzelf gestart) wordt
+ * annuleren of "niet toegestaan" stil genegeerd: dan blijven de knop en het
+ * wachtwoordveld gewoon staan.
+ */
+async function biometricUnlock({ auto = false } = {}) {
+  if (bioBusy) return;
+  bioBusy = true;
+  showError('#lock-error', '');
+  try {
+    await withBusy($('#btn-bio-unlock'), async () => {
       const key = await bio.unlock();
       await vault.unlockWithKey(key);
       await afterUnlock();
-    }).catch((err) => showError('#lock-error', bioMessage(err)));
-  });
+    });
+  } catch (err) {
+    const quiet = auto && (err?.name === 'NotAllowedError' || err?.name === 'AbortError');
+    if (!quiet) showError('#lock-error', bioMessage(err));
+  } finally {
+    bioBusy = false;
+  }
+}
+
+/**
+ * Start Face ID vanzelf bij het openen van de app of bij terugkeer naar de app
+ * (APP.autoBiometricUnlock). Niet na zelf vergrendelen of na inactiviteit.
+ * Werkt in Safari vanaf iOS 17.4; oudere versies weigeren stil en dan blijft
+ * de knop staan.
+ */
+async function autoBiometricUnlock() {
+  if (!APP.autoBiometricUnlock || !bio.isEnrolled() || bioBusy) return;
+  await sleep(300); // iOS geeft de pagina na openen/terugkeren pas net focus
+  if (document.hidden || $('#screen-lock').hidden || !bio.isEnrolled()) return;
+  await biometricUnlock({ auto: true });
 }
 
 async function afterUnlock({ skipSync = false } = {}) {
@@ -333,24 +383,31 @@ function requestPersistentStorage() {
     .catch(() => {});
 }
 
+/** Schakelt Face ID / passkey in, met een nieuwe of een bestaande passkey. */
+async function enrollBiometrics(button, { existing = false } = {}) {
+  await withBusy(button, async () => {
+    if (existing) await bio.enrollExisting(vault.getDataKey());
+    else await bio.enroll(vault.getDataKey());
+    hideNotice();
+    toast('Ontgrendelen met Face ID / passkey is ingeschakeld.', 'ok');
+  }).catch((err) => toast(bioMessage(err), 'error'));
+  updateBioUI();
+}
+
 async function offerBiometrics() {
   if (bio.isEnrolled() || localStorage.getItem(BIO_OFFER_KEY) || !(await bio.isSupported())) return;
-  const enable = h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Inschakelen');
+  const enable = h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Nieuwe passkey');
+  const existing = h('button', { class: 'btn btn-small', type: 'button' }, 'Bestaande gebruiken');
   const later = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Niet nu');
-  enable.addEventListener('click', async () => {
-    await withBusy(enable, async () => {
-      await bio.enroll(vault.getDataKey());
-      hideNotice();
-      toast('Ontgrendelen met Face ID / passkey is ingeschakeld.', 'ok');
-    }).catch((err) => toast(bioMessage(err), 'error'));
-  });
+  enable.addEventListener('click', () => enrollBiometrics(enable));
+  existing.addEventListener('click', () => enrollBiometrics(existing, { existing: true }));
   later.addEventListener('click', () => {
     localStorage.setItem(BIO_OFFER_KEY, '1');
     hideNotice();
   });
   showNotice(
-    h('p', {}, h('strong', {}, 'Sneller ontgrendelen?'), ' Gebruik Face ID, Touch ID of een passkey in plaats van je wachtwoord.'),
-    h('div', { class: 'button-row' }, enable, later),
+    h('p', {}, h('strong', {}, 'Sneller ontgrendelen?'), ' Gebruik Face ID, Touch ID of een passkey in plaats van je wachtwoord. Had je de app al eerder geïnstalleerd? Kies dan je bestaande passkey.'),
+    h('div', { class: 'button-row' }, enable, existing, later),
   );
 }
 
@@ -376,8 +433,7 @@ async function lockNow() {
   const mySession = session;
   clearTimeout(idleTimer);
   clearTimeout(syncTimer);
-  const dlg = $('#dlg-settings');
-  if (dlg.open) dlg.close();
+  closeSettings();
   hideNotice();
   $('#app-root').replaceChildren();
   showLock();
@@ -394,10 +450,17 @@ async function lockNow() {
   }
 }
 
+/** Minuten tot automatisch vergrendelen: keuze op dit apparaat, anders APP.autoLockMinutes. 0 = uit. */
+function autoLockMinutes() {
+  const m = settings?.autoLockMinutes;
+  return Number.isFinite(m) && m >= 0 ? m : APP.autoLockMinutes;
+}
+
 function resetIdle() {
   clearTimeout(idleTimer);
-  if (!vault.isUnlocked() || !APP.autoLockMinutes) return;
-  idleTimer = setTimeout(lockNow, APP.autoLockMinutes * 60_000);
+  const minutes = autoLockMinutes();
+  if (!vault.isUnlocked() || !minutes) return;
+  idleTimer = setTimeout(lockNow, minutes * 60_000);
 }
 
 // ---------- Synchronisatie ----------
@@ -410,6 +473,7 @@ function setSyncState(state, label) {
   btn.title = label;
   btn.setAttribute('aria-label', `Synchroniseren: ${label}`);
   $('#sync-status').textContent = label;
+  setText('#sum-sync', state === 'off' ? 'Niet ingesteld' : label);
 }
 
 function updateSyncIndicator() {
@@ -476,25 +540,95 @@ function wireAppBar() {
   $('#btn-lock').addEventListener('click', lockNow);
   // Elke knop met data-open-settings opent de instellingen (tandwiel in de
   // balk, of een knop in de navigatie van de app).
-  document.querySelectorAll('[data-open-settings]').forEach((b) => b.addEventListener('click', () => openSettings()));
+  $$('#btn-settings, [data-open-settings]').forEach((b) => b.addEventListener('click', () => openSettings()));
 }
 
 // ---------- Instellingen ----------
 
-// Instellingen als venster (standaard) of als scherm in de app
-// (<dialog id="dlg-settings" data-mode="page">). Als scherm opent het zonder
-// achtergrond en meldt het zich met het event "settings:open", zodat de
-// navigatie van de app kan wisselen. Sluiten gaat via dlg.close().
-const settingsAsPage = () => $('#dlg-settings').dataset.mode === 'page';
+// De instellingen kunnen op drie manieren in index.html staan:
+//  1. <dialog id="dlg-settings"> als venster (standaard);
+//  2. <dialog id="dlg-settings" data-mode="page"> als scherm in de app, zonder
+//     achtergrond. Openen meldt zich met het event "settings:open", zodat de
+//     navigatie van de app kan wisselen;
+//  3. <section id="settings-panel"> in de pagina, met secties met data-group.
+//     De app toont het paneel via ctx.showShellSettings(group); exporteert de app
+//     openSettings(section), dan bepaalt die waar en wanneer.
+// Staat er een #settings-menu in het venster, dan toont het eerst een overzicht
+// en opent een tik op een regel dat onderdeel als eigen pagina met een
+// Terug-knop (zoals Instellingen op iOS).
+let settingsPage = null;
 
-function openSettings(section) {
+const settingsDialog = () => $('#dlg-settings');
+const settingsAsPage = () => settingsDialog()?.dataset.mode === 'page';
+const hasSettingsMenu = () => !!$('#settings-menu');
+
+/** Zet tekst in een element als dat in deze app bestaat. */
+function setText(selector, text) {
+  const el = $(selector);
+  if (el) el.textContent = text;
+}
+
+function settingsVisible() {
+  const panel = $('#settings-panel');
+  return settingsDialog()?.open || (panel && !panel.hidden);
+}
+
+function openSettings(page) {
+  const dlg = settingsDialog();
+  if (!dlg) {
+    if (app.openSettings) app.openSettings(page);
+    else showSettingsPanel('all');
+    if (page) $(`#settings-${page}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    return;
+  }
   fillSettings();
-  const dlg = $('#dlg-settings');
   if (settingsAsPage()) {
     if (!dlg.open) dlg.show();
-    document.dispatchEvent(new CustomEvent('settings:open', { detail: { section } }));
+    document.dispatchEvent(new CustomEvent('settings:open', { detail: { section: page } }));
   } else if (!dlg.open) dlg.showModal();
-  if (section) $(`#settings-${section}`)?.scrollIntoView({ block: 'start' });
+  if (hasSettingsMenu()) showSettingsPage(page ?? null);
+  else if (page) $(`#settings-${page}`)?.scrollIntoView({ block: 'start' });
+}
+
+function closeSettings() {
+  const dlg = settingsDialog();
+  if (dlg?.open) dlg.close();
+  const panel = $('#settings-panel');
+  if (panel) panel.hidden = true;
+}
+
+/** Instellingenpaneel in de pagina: toont de secties van `group` ('all' = alles) of verbergt het (null). */
+function showSettingsPanel(group) {
+  const panel = $('#settings-panel');
+  if (!panel) return;
+  const wasHidden = panel.hidden;
+  panel.hidden = !group;
+  if (!group) return;
+  $$('#settings-panel [data-group]').forEach((sec) => {
+    sec.hidden = group !== 'all' && sec.dataset.group !== group;
+  });
+  if (wasHidden) fillSettings();
+}
+
+function showSettingsPage(page) {
+  if (!hasSettingsMenu()) return;
+  const section = page && $(`#settings-${page}`);
+  settingsPage = section ? page : null;
+  $('#settings-menu').hidden = !!settingsPage;
+  $$('#dlg-settings .settings-section').forEach((el) => { el.hidden = el !== section; });
+  const back = $('#btn-settings-back');
+  if (back) back.hidden = !settingsPage;
+  setText('#settings-title', settingsPage ? section.dataset.title : 'Instellingen');
+  const body = $('#dlg-settings .sheet-body');
+  if (body) body.scrollTop = 0;
+  // Zonder verbinding meteen het formulier tonen; anders blijft het dicht.
+  const conn = $('#sync-connection');
+  if (settingsPage === 'sync' && conn) conn.open = !isSyncConfigured();
+  if (!settingsPage) {
+    $$('#dlg-settings details').forEach((d) => { d.open = false; });
+  }
+  // Focus naar de titel, zodat schermlezers de nieuwe pagina aankondigen.
+  $('#settings-title')?.focus({ preventScroll: true });
 }
 
 function fillSettings() {
@@ -507,27 +641,48 @@ function fillSettings() {
   f.elements.token.value = '';
   f.elements.token.placeholder = gh?.token ? '•••••••• (opgeslagen, leeg laten om te behouden)' : 'github_pat_…';
   f.elements.autoSync.checked = settings?.autoSync !== false;
+  fillAutoLock();
   $('#btn-github-remove').hidden = !gh;
+  const syncNowBtn = $('#btn-sync-now');
+  if (syncNowBtn) syncNowBtn.hidden = !gh;
+  setText('#sum-about', `Versie ${APP.version}`);
   ['#github-error', '#password-error', '#restore-error'].forEach((s) => showError(s, ''));
   updateSyncIndicator();
   updateBioUI();
 }
 
+/** Keuzelijst "Automatisch vergrendelen"; voegt een afwijkende waarde (uit config of ander apparaat) zo nodig toe. */
+function fillAutoLock() {
+  const select = $('#auto-lock');
+  if (!select) return;
+  const value = String(autoLockMinutes());
+  if (![...select.options].some((o) => o.value === value)) {
+    select.append(h('option', { value }, `Na ${value} minuten`));
+  }
+  select.value = value;
+}
+
 async function updateBioUI() {
   const btn = $('#btn-bio-toggle');
   const status = $('#bio-status');
+  const existing = $('#btn-bio-existing');
   if (bio.isEnrolled()) {
     status.textContent = 'Ingeschakeld op dit apparaat.';
+    setText('#sum-security', 'Face ID / passkey aan');
     btn.textContent = 'Uitschakelen';
     btn.disabled = false;
+    if (existing) existing.hidden = true;
     return;
   }
   const supported = await bio.isSupported();
+  setText('#sum-security', supported ? 'Face ID / passkey uit' : 'Alleen wachtwoord');
   status.textContent = supported
     ? 'Uit. Ontgrendel met Face ID, Touch ID, Windows Hello of een passkey.'
     : 'Niet beschikbaar in deze browser of op dit apparaat.';
-  btn.textContent = 'Inschakelen';
+  // Zonder knop "Bestaande gebruiken" in deze app: één knop die een nieuwe passkey maakt.
+  btn.textContent = existing ? 'Nieuwe passkey' : 'Inschakelen';
   btn.disabled = !supported;
+  if (existing) existing.hidden = !supported;
 }
 
 async function checkForUpdate(button) {
@@ -541,9 +696,22 @@ async function checkForUpdate(button) {
 }
 
 function wireSettings() {
-  const dlg = $('#dlg-settings');
-  $('#btn-close-settings').addEventListener('click', () => dlg.close());
-  dlg.addEventListener('click', (e) => { if (e.target === dlg && !settingsAsPage()) dlg.close(); });
+  const dlg = settingsDialog();
+  if (dlg) {
+    $('#btn-close-settings')?.addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg && !settingsAsPage()) dlg.close(); });
+    dlg.addEventListener('close', () => showSettingsPage(null));
+    // Escape op een onderdeel gaat eerst terug naar het overzicht.
+    dlg.addEventListener('cancel', (e) => {
+      if (!settingsPage) return;
+      e.preventDefault();
+      showSettingsPage(null);
+    });
+  }
+  $('#btn-settings-back')?.addEventListener('click', () => showSettingsPage(null));
+  $$('#settings-menu [data-page]').forEach((row) => {
+    row.addEventListener('click', () => showSettingsPage(row.dataset.page));
+  });
 
   // GitHub-sync
   const ghForm = $('#form-github');
@@ -575,6 +743,16 @@ function wireSettings() {
 
   $('#btn-sync-now').addEventListener('click', () => runSync({ quiet: false }));
 
+  // Automatisch vergrendelen (per apparaat)
+  $('#auto-lock')?.addEventListener('change', async (e) => {
+    const minutes = Number(e.target.value);
+    if (!Number.isFinite(minutes) || minutes < 0) return;
+    settings = { ...settings, autoLockMinutes: minutes };
+    await vault.setDeviceSettings(settings);
+    resetIdle();
+    toast(minutes ? `Vergrendelt na ${minutes} ${minutes === 1 ? 'minuut' : 'minuten'} zonder gebruik.` : 'Automatisch vergrendelen staat uit.', 'ok');
+  });
+
   // Biometrie / passkey
   $('#btn-bio-toggle').addEventListener('click', async (e) => {
     if (bio.isEnrolled()) {
@@ -582,13 +760,9 @@ function wireSettings() {
       toast('Ontgrendelen met passkey uitgeschakeld. Je kunt de passkey zelf verwijderen in je wachtwoordbeheer.');
       return updateBioUI();
     }
-    await withBusy(e.currentTarget, async () => {
-      await bio.enroll(vault.getDataKey());
-      hideNotice();
-      toast('Ontgrendelen met Face ID / passkey is ingeschakeld.', 'ok');
-    }).catch((err) => toast(bioMessage(err), 'error'));
-    updateBioUI();
+    await enrollBiometrics(e.currentTarget);
   });
+  $('#btn-bio-existing')?.addEventListener('click', (e) => enrollBiometrics(e.currentTarget, { existing: true }));
 
   // Wachtwoord wijzigen
   const pwForm = $('#form-password');
@@ -673,13 +847,14 @@ function wireLifecycle() {
       return;
     }
     swRegistration?.update().catch(() => {});
-    if (vault.isUnlocked() && APP.autoLockMinutes && hiddenAt
-      && Date.now() - hiddenAt > APP.autoLockMinutes * 60_000) {
+    if (vault.isUnlocked() && autoLockMinutes() && hiddenAt
+      && Date.now() - hiddenAt > autoLockMinutes() * 60_000) {
       lockNow();
     } else if (vault.isUnlocked() && Date.now() - lastSyncAttempt > 30_000) {
       runSync({ quiet: true });
     }
     cover(false);
+    if (!$('#screen-lock').hidden) autoBiometricUnlock();
   });
 
   // De app-wisselaar op iPhone/Android: inhoud verbergen zodra de app de focus verliest.
@@ -721,7 +896,7 @@ function wireOtherTabs() {
     if (!vault.isUnlocked()) return;
     if (e.key === vault.KEYS.device) {
       settings = (await vault.getDeviceSettings()) ?? settings;
-      if ($('#dlg-settings').open) fillSettings();
+      if (settingsVisible()) fillSettings();
     }
     updateSyncIndicator();
   });

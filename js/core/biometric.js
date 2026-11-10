@@ -11,6 +11,28 @@ import * as c from './crypto.js';
 const STORE_KEY = `${APP.storagePrefix}:biometric`;
 const HKDF_INFO = `${APP.storagePrefix}:biometric-kek:v1`;
 
+// Vaste PRF-invoer per app. Zo levert dezelfde passkey altijd hetzelfde geheim
+// op, ook na opnieuw installeren (als de lokale opslag gewist is). De invoer is
+// niet geheim; het geheim zit in de passkey en komt pas vrij na biometrie.
+const PRF_LABEL = `${APP.storagePrefix}:biometric-prf:v1`;
+// Begin van user.id bij nieuwe passkeys, om passkeys van andere apps op
+// hetzelfde domein te herkennen.
+const USER_TAG = new TextEncoder().encode(`${APP.storagePrefix}:`);
+
+async function appPrfSalt() {
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PRF_LABEL)));
+}
+
+function belongsToOtherApp(userHandle) {
+  if (!userHandle || userHandle.byteLength === 0) return false;
+  const id = new Uint8Array(userHandle);
+  const colon = id.indexOf(0x3a);
+  // Oude passkeys (vóór dit kenmerk) hebben een willekeurige id: accepteren.
+  if (colon < 1 || colon > 40) return false;
+  if (id.length < USER_TAG.length) return true;
+  return !USER_TAG.every((b, i) => id[i] === b);
+}
+
 export async function isSupported() {
   if (!window.PublicKeyCredential || !navigator.credentials) return false;
   try {
@@ -38,18 +60,36 @@ async function evaluatePrf(credentialId, prfSalt) {
   return new Uint8Array(out);
 }
 
+/** Pakt de datasleutel in met het PRF-geheim en bewaart dat op dit apparaat. */
+async function store(dataKey, credentialId, prfSalt, secret) {
+  const hkdfSalt = c.randomBytes(32);
+  const kek = await c.secretKey(secret, hkdfSalt, HKDF_INFO);
+  const wrapped = await c.wrapDataKey(dataKey, kek);
+
+  localStorage.setItem(STORE_KEY, JSON.stringify({
+    credentialId: c.bytesToB64(credentialId),
+    prfSalt: c.bytesToB64(prfSalt),
+    hkdfSalt: c.bytesToB64(hkdfSalt),
+    wrapped,
+  }));
+}
+
+/** Maakt een nieuwe passkey aan en gebruikt die voor ontgrendelen. */
 export async function enroll(dataKey) {
-  const prfSalt = c.randomBytes(32);
+  const prfSalt = await appPrfSalt();
+  const userId = new Uint8Array(USER_TAG.length + 16);
+  userId.set(USER_TAG);
+  userId.set(c.randomBytes(16), USER_TAG.length);
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: c.randomBytes(32),
       rp: { name: APP.name },
-      user: { id: c.randomBytes(16), name: `${APP.name} – ontgrendelen`, displayName: APP.name },
+      user: { id: userId, name: `${APP.name} – ontgrendelen`, displayName: APP.name },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 },   // ES256
         { type: 'public-key', alg: -257 }, // RS256
       ],
-      authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
       timeout: 60_000,
       extensions: { prf: { eval: { first: prfSalt } } },
     },
@@ -65,16 +105,29 @@ export async function enroll(dataKey) {
     ? new Uint8Array(ext.prf.results.first)
     : await evaluatePrf(credentialId, prfSalt);
 
-  const hkdfSalt = c.randomBytes(32);
-  const kek = await c.secretKey(secret, hkdfSalt, HKDF_INFO);
-  const wrapped = await c.wrapDataKey(dataKey, kek);
+  await store(dataKey, credentialId, prfSalt, secret);
+}
 
-  localStorage.setItem(STORE_KEY, JSON.stringify({
-    credentialId: c.bytesToB64(credentialId),
-    prfSalt: c.bytesToB64(prfSalt),
-    hkdfSalt: c.bytesToB64(hkdfSalt),
-    wrapped,
-  }));
+/**
+ * Gebruikt een passkey die al bestaat (bijvoorbeeld na opnieuw installeren).
+ * De browser toont de passkeys voor dit domein; je kiest er één.
+ */
+export async function enrollExisting(dataKey) {
+  const prfSalt = await appPrfSalt();
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge: c.randomBytes(32),
+      userVerification: 'required',
+      timeout: 60_000,
+      extensions: { prf: { eval: { first: prfSalt } } },
+    },
+  });
+  if (belongsToOtherApp(assertion.response.userHandle)) {
+    throw new Error(`Deze passkey hoort bij een andere app. Kies "${APP.name} – ontgrendelen".`);
+  }
+  const out = assertion.getClientExtensionResults().prf?.results?.first;
+  if (!out) throw new Error('Deze passkey ondersteunt ontgrendelen niet (PRF). Kies een andere of maak een nieuwe.');
+  await store(dataKey, new Uint8Array(assertion.rawId), prfSalt, new Uint8Array(out));
 }
 
 /** Geeft de datasleutel terug na succesvolle biometrie. */

@@ -201,8 +201,25 @@
                 <div class="settings-card">
                   <h4>Face ID / passkey</h4>
                   <p id="bio-status" class="status-line"></p>
-                  <div class="button-row"><button id="btn-bio-toggle" class="btn" type="button">Inschakelen</button></div>
-                  <p class="hint">Hiermee ontgrendel je de app zonder je wachtwoord in te typen. Dit geldt alleen voor dit apparaat.</p>
+                  <div class="button-row">
+                    <button id="btn-bio-toggle" class="btn" type="button">Inschakelen</button>
+                    <button id="btn-bio-existing" class="btn btn-ghost" type="button" hidden>Bestaande passkey</button>
+                  </div>
+                  <p class="hint">Hiermee ontgrendel je de app zonder je wachtwoord in te typen. Dit geldt alleen voor dit apparaat. Had je de app al eerder geïnstalleerd? Kies dan <em>Bestaande passkey</em>.</p>
+                </div>
+                <div class="settings-card">
+                  <h4><label for="auto-lock">Automatisch vergrendelen</label></h4>
+                  <select id="auto-lock" class="auto-lock-select">
+                    <option value="1">Na 1 minuut</option>
+                    <option value="2">Na 2 minuten</option>
+                    <option value="5">Na 5 minuten</option>
+                    <option value="10">Na 10 minuten</option>
+                    <option value="15">Na 15 minuten</option>
+                    <option value="30">Na 30 minuten</option>
+                    <option value="60">Na 1 uur</option>
+                    <option value="0">Nooit</option>
+                  </select>
+                  <p class="hint">Als je de app zo lang niet gebruikt of hij zo lang op de achtergrond staat. Geldt alleen op dit apparaat.</p>
                 </div>
                 <div class="settings-card">
                   <h4>Wachtwoord wijzigen</h4>

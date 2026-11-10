@@ -4,21 +4,23 @@
    ============================================================= */
 
 :root {
+  /* Licht en donker in één regel: light-dark(licht, donker). Welke van de twee geldt, volgt uit
+     color-scheme: automatisch (systeem) of vast via data-modus op <html> (een app kan dat aanbieden onder Instellingen → Weergave). */
   color-scheme: light dark;
-  --accent: #2563eb;
-  --accent-contrast: #ffffff;
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --surface-2: #eef0f3;
-  --text: #15181d;
-  --muted: #646b75;
-  --border: #dfe2e7;
-  --danger: #c62828;
-  --ok: #1e8e3e;
-  --warn: #c77700;
+  --accent: light-dark(#2563eb, #5b8cff);
+  --accent-contrast: light-dark(#ffffff, #0b0d12);
+  --bg: light-dark(#f5f6f8, #0f1115);
+  --surface: light-dark(#ffffff, #181b21);
+  --surface-2: light-dark(#eef0f3, #22262e);
+  --text: light-dark(#15181d, #e9ecf1);
+  --muted: light-dark(#646b75, #9aa2ad);
+  --border: light-dark(#dfe2e7, #2c313a);
+  --danger: light-dark(#c62828, #ef5350);
+  --ok: light-dark(#1e8e3e, #4caf50);
+  --warn: light-dark(#c77700, #ffb74d);
   --radius: 14px;
   --radius-sm: 10px;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 2px light-dark(rgb(0 0 0 / 0.05), transparent), 0 4px 16px light-dark(rgb(0 0 0 / 0.05), transparent);
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --tap: 44px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -26,23 +28,9 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --accent: #5b8cff;
-    --accent-contrast: #0b0d12;
-    --bg: #0f1115;
-    --surface: #181b21;
-    --surface-2: #22262e;
-    --text: #e9ecf1;
-    --muted: #9aa2ad;
-    --border: #2c313a;
-    --danger: #ef5350;
-    --ok: #4caf50;
-    --warn: #ffb74d;
-    --shadow: none;
-  }
-}
+:root[data-modus="licht"] { color-scheme: light; }
+:root[data-modus="donker"] { color-scheme: dark; }
+:root[data-modus="zwart"] { color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -390,10 +378,118 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.4); }
   -webkit-overflow-scrolling: touch;
   padding: 8px 20px calc(24px + var(--safe-bottom));
 }
-.settings-section { display: grid; gap: 12px; padding: 20px 0; scroll-margin-top: 8px; }
+.settings-section { display: grid; gap: 16px; padding: 16px 0; }
+/* Zonder overzichtsmenu staan alle onderdelen onder elkaar, met een lijn ertussen. */
 .settings-section + .settings-section { border-top: 1px solid var(--border); }
-.setting-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#settings-menu ~ .settings-section { border-top: 0; }
 .danger-zone h3 { color: var(--danger); }
+.setting-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.setting-line > select { width: auto; flex: none; }
+.bio-buttons { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+
+/* Instellingen als volledig scherm op de telefoon, vaste kaart op brede schermen. */
+dialog.sheet.settings {
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  padding: var(--safe-top) var(--safe-right) 0 var(--safe-left);
+}
+@media (min-width: 640px) {
+  dialog.sheet.settings {
+    width: min(560px, 100%);
+    height: min(720px, 90dvh);
+    margin: auto;
+    border-radius: 20px;
+    padding: 0;
+  }
+}
+.settings .sheet-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  padding: 6px 8px;
+}
+.settings .sheet-header h2 {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1.05rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  outline: none;
+}
+.settings-back {
+  grid-column: 1;
+  justify-self: start;
+  min-height: 44px;
+  padding-inline: 8px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+}
+.settings #btn-close-settings { grid-column: 3; justify-self: end; }
+
+.settings-menu { display: grid; gap: 24px; padding: 16px 0; }
+.menu-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.menu-group li + li { border-top: 1px solid var(--border); }
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 16px;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.menu-row::after { content: '›'; color: var(--muted); font-size: 1.3rem; line-height: 1; }
+.menu-row:active, .menu-row:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.menu-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.menu-label { flex: 1; font-weight: 500; }
+.menu-summary {
+  max-width: 55%;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-danger .menu-label { color: var(--danger); }
+
+/* Uitklapbare onderdelen binnen een pagina (formulieren die je zelden nodig hebt). */
+.disclosure {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 1.3rem; transition: transform 0.15s; }
+.disclosure[open] > summary::after { transform: rotate(90deg); }
+.disclosure > :not(summary) { margin: 0 16px 16px; }
 
 /* ---------- Meldingen ---------- */
 
@@ -455,4 +551,6 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.4); }
 @media (max-width: 420px) {
   .field-row { grid-template-columns: 1fr; }
   .setting-line { flex-direction: column; align-items: stretch; }
+  .setting-line > select { width: 100%; }
+  .bio-buttons { flex-direction: column; }
 }

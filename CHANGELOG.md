@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.33.0 – 2026-11-10
+
+**Toegevoegd** (Face ID / passkey en beveiliging, uit de gedeelde kern)
+- Na opnieuw installeren kun je je **bestaande passkey** weer gebruiken: kies *Bestaande passkey* in Instellingen → Beveiliging, of *Bestaande gebruiken* bij "Sneller ontgrendelen?".
+- Face ID start vanzelf bij het openen van de app of als je terugkeert naar de app.
+- **Automatisch vergrendelen** is per apparaat in te stellen (Instellingen → Beveiliging).
+
+Je huidige Face ID-instelling blijft werken. Je gegevens veranderen niet.
+
 ## 1.32.0
 
 - **Eerst kiezen: Modern of Retro.** Tik je op *Wat ga ik nu spelen?*, dan kies je eerst of je een moderne of een retro game wilt spelen. Daarna kiest de app alleen binnen die categorie. Bij elke keuze zie je hoeveel games er in je backlog staan.

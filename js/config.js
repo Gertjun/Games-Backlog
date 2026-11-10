@@ -6,7 +6,7 @@ export const APP = {
 
   // Semver. Bij ELKE release ook VERSION in sw.js gelijk ophogen,
   // anders krijgen geïnstalleerde apps de update niet.
-  version: '1.32.0',
+  version: '1.33.0',
 
   // UNIEK PER APP. Alle GitHub Pages-sites onder <gebruiker>.github.io
   // delen dezelfde origin en dus dezelfde localStorage. Zonder unieke
@@ -19,8 +19,14 @@ export const APP = {
   defaultDataPath: 'games-backlog/vault.json',
   defaultBranch: 'main',
 
-  // Automatisch vergrendelen na zoveel minuten inactiviteit of op de achtergrond. 0 = uit.
+  // Standaardtijd voor automatisch vergrendelen (minuten inactiviteit of op de
+  // achtergrond). 0 = uit. Per apparaat aan te passen in Instellingen > Beveiliging.
   autoLockMinutes: 5,
+
+  // Face ID / passkey vanzelf starten als het vergrendelscherm verschijnt bij
+  // het openen van de app of bij terugkeer naar de app (niet na zelf
+  // vergrendelen). Werkt in Safari vanaf iOS 17.4; anders blijft de knop staan.
+  autoBiometricUnlock: true,
 
   // Wachttijd na de laatste wijziging voordat automatisch gesynchroniseerd wordt.
   // Zo worden meerdere wijzigingen één commit. Bij vergrendelen of het verlaten

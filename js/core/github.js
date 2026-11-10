@@ -58,6 +58,19 @@ export function createClient({ owner, repo, branch, path, token }) {
     throw new GitHubError(describe(res.status, detail), res.status);
   }
 
+  async function getText() {
+    const json = await call('GET', `${contentsUrl}?ref=${encodeURIComponent(branch)}`);
+    if (!json) return null;
+    if (Array.isArray(json)) throw new GitHubError('Het pad verwijst naar een map, niet naar een bestand.');
+    let content = json.content;
+    if (json.encoding !== 'base64' || !content) {
+      // Bestanden > 1 MB: inhoud via de blobs-API ophalen.
+      const blob = await call('GET', `${base}/git/blobs/${json.sha}`);
+      content = blob?.content ?? '';
+    }
+    return { sha: json.sha, text: b64ToUtf8(content) };
+  }
+
   return {
     async checkRepo() {
       const info = await call('GET', base);
@@ -65,19 +78,15 @@ export function createClient({ owner, repo, branch, path, token }) {
       return { private: info.private, defaultBranch: info.default_branch };
     },
 
+    /** Ruwe inhoud van het bestand als tekst. @returns {Promise<{sha: string, text: string} | null>} */
+    getText,
+
     /** @returns {Promise<{sha: string, envelope: object} | null>} */
     async getFile() {
-      const json = await call('GET', `${contentsUrl}?ref=${encodeURIComponent(branch)}`);
-      if (!json) return null;
-      if (Array.isArray(json)) throw new GitHubError('Het pad verwijst naar een map, niet naar een bestand.');
-      let content = json.content;
-      if (json.encoding !== 'base64' || !content) {
-        // Bestanden > 1 MB: inhoud via de blobs-API ophalen.
-        const blob = await call('GET', `${base}/git/blobs/${json.sha}`);
-        content = blob?.content ?? '';
-      }
+      const file = await getText();
+      if (!file) return null;
       try {
-        return { sha: json.sha, envelope: JSON.parse(b64ToUtf8(content)) };
+        return { sha: file.sha, envelope: JSON.parse(file.text) };
       } catch {
         throw new GitHubError('Het bestand op GitHub is geen geldig kluisbestand.');
       }
