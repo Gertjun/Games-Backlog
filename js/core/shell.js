@@ -171,6 +171,23 @@ function render() {
     console.error(err);
     root.replaceChildren(h('p', { class: 'form-error' }, `Er ging iets mis bij het tonen: ${err.message}`));
   }
+  renderAppSettings();
+}
+
+/**
+ * Eigen instellingen van de app: een <section id="settings-…" class="settings-section"
+ * data-app-page> in het instellingenvenster, met een regel in #settings-menu.
+ * De schil toont de pagina; de app vult hem in app.renderSettings(page, el, ctx).
+ */
+function renderAppSettings() {
+  const section = settingsPage && $(`#settings-${settingsPage}`);
+  if (!section?.hasAttribute('data-app-page') || !app.renderSettings || !vault.isUnlocked()) return;
+  try {
+    app.renderSettings(settingsPage, section, ctx);
+  } catch (err) {
+    console.error(err);
+    section.replaceChildren(h('p', { class: 'form-error' }, `Er ging iets mis bij het tonen: ${err.message}`));
+  }
 }
 
 /** Melding boven de app-inhoud (voor de schil; niet voor de app zelf). */
@@ -660,6 +677,7 @@ function showSettingsPage(page) {
   if (!settingsPage) {
     $$('#dlg-settings details').forEach((d) => { d.open = false; });
   }
+  renderAppSettings();
   // Focus naar de titel, zodat schermlezers de nieuwe pagina aankondigen.
   $('#settings-title')?.focus({ preventScroll: true });
 }

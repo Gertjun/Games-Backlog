@@ -2,7 +2,7 @@
 
 De **actuele stand**: versie, open punten en sessielog. Werk dit bij aan het eind van elke sessie (zie `CLAUDE.md`). Besluiten staan in `DECISIONS.md`, wensen in `WISHLIST.md`.
 
-Laatst bijgewerkt: 11 november 2026 · versie **1.34.0**
+Laatst bijgewerkt: 11 november 2026 · versie **1.34.1**
 
 ---
 
@@ -18,6 +18,8 @@ PWA om bij te houden welke games Geert op welke console heeft gespeeld (PS5 en r
 
 ## 4. Sessielog (kort, nieuwste bovenaan)
 
+- **11 nov 2026:**
+  - 1.34.1: kern gelijk aan template 1.4.2 (bredere zijbalk).
 - **11 nov 2026:**
   - 1.34.0: navigatie en Instellingen komen nu uit de kern (template 1.4.1); `nav.js` en `settings-nav.js` zijn weg. Koppelcode toegevoegd.
 - **10 nov 2026:**

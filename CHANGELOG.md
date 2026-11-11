@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.34.1 – 2026-11-11
+
+**Verbeterd**
+- De zijbalk op de laptop is iets breder, zodat de appnaam beter past (gelijk aan je andere apps).
+
 ## 1.34.0 – 2026-11-11
 
 Dezelfde indeling als je andere apps.

@@ -634,7 +634,7 @@ dialog.sheet.settings {
 @media (min-width: 1000px) {
   /* --head: hoogte van de kopbalk, zodat de onderrand van het blok bovenaan
      de zijbalk precies doorloopt in die van de kopbalk. */
-  #screen-app { --rail: 216px; --head: calc(61px + var(--safe-top)); }
+  #screen-app { --rail: 236px; --head: calc(61px + var(--safe-top)); }
   #screen-app.nav-collapsed { --rail: 68px; }
   .app-nav {
     position: fixed; top: 0; left: 0; bottom: 0; width: calc(var(--rail) + var(--safe-left));
@@ -649,7 +649,7 @@ dialog.sheet.settings {
     height: var(--head); padding: calc(8px + var(--safe-top)) 8px 8px 16px;
     border-bottom: 1px solid var(--border);
   }
-  .app-nav-brand .app-title { font-size: 0.98rem; line-height: 1.15; white-space: normal; overflow-wrap: break-word; }
+  .app-nav-brand .app-title { font-size: 0.95rem; line-height: 1.15; white-space: normal; overflow-wrap: break-word; }
   .app-nav-brand .app-brand-text { flex: 1; }
   .app-nav-collapse {
     display: grid; place-items: center; flex: none; width: 36px; height: 36px;
