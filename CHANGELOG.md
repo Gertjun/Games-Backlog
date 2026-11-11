@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.34.0 – 2026-11-11
+
+Dezelfde indeling als je andere apps.
+
+**Gewijzigd**
+- **Navigatie**: tabbalk onderin op de iPhone, zijbalk op de laptop en de iPad liggend. **Nieuw:** op de iPad rechtop staan de schermen als tabbladen onder de kopbalk, en de zijbalk is in te klappen.
+- **Instellingen** opent met hetzelfde overzicht als in je andere apps (Synchronisatie, Beveiliging, Back-up, Over deze app, Dit apparaat wissen); tik op een regel voor dat onderdeel.
+
+**Toegevoegd**
+- **Ander apparaat koppelen** met een koppelcode en pincode (Instellingen → Synchronisatie), zodat je repo en token niet hoeft over te typen.
+
+Je games en je Face ID-instelling veranderen niet.
+
 ## 1.33.0 – 2026-11-10
 
 **Toegevoegd** (Face ID / passkey en beveiliging, uit de gedeelde kern)

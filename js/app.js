@@ -34,7 +34,6 @@ import { applyCorrections } from './corrections.js';
 import { assignKnownSeries } from './series.js';
 import { openSeriesImport } from './series-dialog.js';
 import { attachSuggestions } from './suggest.js';
-import { currentScreen, onScreenChange, setCheckCount, select } from './nav.js';
 import { renderCheck, countIssues, resetCheckSession, parseScore } from './check.js';
 import { clearSeriesCheck } from './series-check.js';
 import { renderAnalysis } from './analysis.js';
@@ -166,6 +165,13 @@ function withTitleInfo(g, known) {
 export const app = {
   schemaVersion: SCHEMA,
 
+  // Schermen in de navigatie van de schil (core/nav.js); Instellingen komt er vanzelf bij.
+  screens: [
+    { id: 'overview', label: 'Overzicht', icon: 'overview' },
+    { id: 'analysis', label: 'Analyse', icon: 'chart' },
+    { id: 'check', label: 'Controle', icon: 'check' },
+  ],
+
   initialData() {
     // Vaste id's, zodat de startlijst nooit dubbel raakt bij het samenvoegen.
     // updatedAt = 1: elke echte wijziging is nieuwer.
@@ -242,9 +248,14 @@ export const app = {
     const all = alive(ctx.data.games);
     infoById = new Map(alive(ctx.data.gameInfo).map((r) => [r.id, r]));
     relatedById = relatedIndex(all);
-    last = { root, ctx };
-    setCheckCount(countIssues(all, infoById));
-    if (currentScreen() === 'check') {
+    // Wisselen van scherm: de schil tekent opnieuw; een lopende controle begint dan opnieuw.
+    if (lastScreen !== ctx.screen) {
+      if (lastScreen === 'check') resetCheckSession();
+      lastScreen = ctx.screen;
+    }
+    go = ctx.go;
+    ctx.setBadge('check', countIssues(all, infoById));
+    if (ctx.screen === 'check') {
       renderCheck(root, {
         all: all.slice().sort((a, b) => collator.compare(a.title, b.title)),
         infoById, ctx,
@@ -260,7 +271,7 @@ export const app = {
       afterRender(root, ctx);
       return;
     }
-    if (currentScreen() === 'analysis') {
+    if (ctx.screen === 'analysis') {
       renderAnalysis(root, {
         all, status: STATUS, noSeries: NO_SERIES, compare: collator.compare,
         scoreOf: (g) => mainScore(infoById.get(g.id), g)?.score || null,
@@ -349,17 +360,14 @@ export const app = {
   },
 };
 
-// Laatst getekende root en ctx, om bij het wisselen van scherm opnieuw te tekenen.
-let last = null;
-onScreenChange((screen) => {
-  if (screen !== 'check') resetCheckSession();
-  if (last) app.render(last.root, last.ctx);
-});
+// Het laatst getekende scherm en ctx.go van de schil (gezet bij elke render).
+let lastScreen = null;
+let go = () => {};
 
 /** Vanuit Analyse naar Overzicht, met alleen dit filter aan (zoeken leeg). */
 function showFiltered(filter) {
   Object.assign(view, { q: '', status: '', section: '', group: '', platform: '', year: '' }, filter);
-  select('overview');
+  go('overview');
 }
 
 function afterRender(root, ctx) {

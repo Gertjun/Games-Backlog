@@ -8,6 +8,8 @@ import * as vault from './vault.js';
 import * as bio from './biometric.js';
 import { syncNow, UpdateRequiredError } from './sync.js';
 import { createClient } from './github.js';
+import { createNav } from './nav.js';
+import * as pair from './pair.js';
 import { $, $$, h, formValues, saveFile, formatWhen, today, isMobileStandalone } from './dom.js';
 
 const SCREENS = ['loading', 'setup', 'lock', 'app'];
@@ -30,6 +32,7 @@ let hiddenAt = 0;
 let lastSyncAttempt = 0;
 let swRegistration = null;
 let persistRequested = false;
+let nav = null;            // navigatie tussen de schermen (core/nav.js)
 let bioBusy = false;       // er loopt al een Face ID / passkey-poging
 
 // Wijzigingen lopen één voor één, zodat elke wijziging voortbouwt op de vorige
@@ -66,6 +69,14 @@ const ctx = {
   },
   toast,
   confirm: (msg) => window.confirm(msg),
+  /** Het scherm dat nu getoond wordt: een id uit app.screens. */
+  get screen() { return nav?.screen ?? null; },
+  /** Naar een ander scherm van de app. */
+  go: (id) => nav?.select(id),
+  /** Getal op een knop in de navigatie (0 = verbergen). */
+  setBadge: (id, n) => nav?.setBadge(id, n),
+  /** Opent Instellingen, eventueel bij een onderdeel ('sync', 'security', 'backup', …). */
+  openSettings: (page) => openSettings(page),
   /**
    * Alleen bij een instellingenpaneel (#settings-panel) in de pagina: toont de
    * secties met data-group="<group>" ('all' = alles), of verbergt het paneel (null).
@@ -103,6 +114,13 @@ export async function start() {
   wireSettings();
   wireLifecycle();
   wireOtherTabs();
+  nav = createNav({
+    screens: app.screens,
+    host: $('#screen-app'),
+    onChange: () => render(),
+    onSettings: () => openSettings(),
+    onLeaveSettings: () => closeSettings(),
+  });
 
   if (vault.hasVault()) {
     showLock();
@@ -257,6 +275,19 @@ function wireSetup() {
     linkForm.hidden = mode !== 'link';
     showError('#setup-error', '');
   }));
+
+  // Koppelcode van een ander apparaat: vult eigenaar, repo, branch, pad en token in.
+  $('#btn-pair-in')?.addEventListener('click', async (e) => {
+    showError('#setup-error', '');
+    await withBusy(e.currentTarget, async () => {
+      const gh = await pair.readPairCode(linkForm.elements.pairCode.value, linkForm.elements.pairPin.value);
+      for (const k of ['owner', 'repo', 'branch', 'path', 'token']) linkForm.elements[k].value = gh[k] ?? '';
+      linkForm.elements.pairCode.value = '';
+      linkForm.elements.pairPin.value = '';
+      linkForm.elements.password.focus();
+      toast('Koppeling ingevuld. Vul nu het wachtwoord van je kluis in.', 'ok');
+    }).catch((err) => showError('#setup-error', err.message));
+  });
 
   newForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -434,6 +465,7 @@ async function lockNow() {
   clearTimeout(idleTimer);
   clearTimeout(syncTimer);
   closeSettings();
+  $('#dlg-pair')?.close();
   hideNotice();
   $('#app-root').replaceChildren();
   showLock();
@@ -584,6 +616,7 @@ function openSettings(page) {
   fillSettings();
   if (settingsAsPage()) {
     if (!dlg.open) dlg.show();
+    nav?.showSettings();
     document.dispatchEvent(new CustomEvent('settings:open', { detail: { section: page } }));
   } else if (!dlg.open) dlg.showModal();
   if (hasSettingsMenu()) showSettingsPage(page ?? null);
@@ -645,6 +678,8 @@ function fillSettings() {
   $('#btn-github-remove').hidden = !gh;
   const syncNowBtn = $('#btn-sync-now');
   if (syncNowBtn) syncNowBtn.hidden = !gh;
+  const pairBtn = $('#btn-pair-out');
+  if (pairBtn) pairBtn.hidden = !gh;
   setText('#sum-about', `Versie ${APP.version}`);
   ['#github-error', '#password-error', '#restore-error'].forEach((s) => showError(s, ''));
   updateSyncIndicator();
@@ -685,6 +720,44 @@ async function updateBioUI() {
   if (existing) existing.hidden = !supported;
 }
 
+/**
+ * Ander apparaat koppelen: toont een koppelcode en een losse pincode. De code
+ * bevat de GitHub-koppeling (met token), versleuteld met de pincode. Het
+ * wachtwoord van de kluis zit er niet in.
+ */
+async function openPairOut() {
+  if (!isSyncConfigured()) throw new Error('Stel eerst de synchronisatie in.');
+  const pin = pair.newPin();
+  const code = await pair.makePairCode(settings.github, pin);
+  const field = h('textarea', { class: 'pair-code', readonly: true, rows: 4, 'aria-label': 'Koppelcode' }, code);
+  const copy = h('button', { class: 'btn btn-primary', type: 'button' }, 'Koppelcode kopiëren');
+  const close = h('button', { class: 'btn', type: 'button' }, 'Klaar');
+  const dlg = h('dialog', { id: 'dlg-pair', class: 'sheet pair-sheet', 'aria-labelledby': 'pair-title' },
+    h('div', { class: 'sheet-header' }, h('h2', { id: 'pair-title' }, 'Ander apparaat koppelen')),
+    h('div', { class: 'sheet-body stack' },
+      h('ol', { class: 'pair-steps' },
+        h('li', {}, 'Zet de koppelcode op je andere apparaat, bijvoorbeeld via AirDrop, Notities of een bericht aan jezelf.'),
+        h('li', {}, `Open daar ${APP.name}, kies `, h('strong', {}, 'Bestaande koppelen'), ' en plak de koppelcode.'),
+        h('li', {}, 'Typ de pincode hieronder over en vul het wachtwoord van je kluis in.')),
+      field,
+      h('p', { class: 'pair-pin' }, h('span', { class: 'muted' }, 'Pincode'), h('strong', {}, pin)),
+      h('p', { class: 'hint' }, 'Stuur de pincode niet samen met de koppelcode mee. De code werkt alleen met deze pincode; sluit je dit venster, dan is de pincode weg.'),
+      h('div', { class: 'button-row' }, copy, close)));
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('Koppelcode gekopieerd.', 'ok');
+    } catch {
+      field.select();
+      toast('Kopiëren lukte niet. Selecteer de code en kopieer hem zelf.');
+    }
+  });
+  close.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
+}
+
 async function checkForUpdate(button) {
   if (!swRegistration) return toast('Updates zijn niet beschikbaar in deze browser.');
   await withBusy(button, async () => {
@@ -700,7 +773,7 @@ function wireSettings() {
   if (dlg) {
     $('#btn-close-settings')?.addEventListener('click', () => dlg.close());
     dlg.addEventListener('click', (e) => { if (e.target === dlg && !settingsAsPage()) dlg.close(); });
-    dlg.addEventListener('close', () => showSettingsPage(null));
+    dlg.addEventListener('close', () => { showSettingsPage(null); nav?.hideSettings(); });
     // Escape op een onderdeel gaat eerst terug naar het overzicht.
     dlg.addEventListener('cancel', (e) => {
       if (!settingsPage) return;
@@ -742,6 +815,8 @@ function wireSettings() {
   });
 
   $('#btn-sync-now').addEventListener('click', () => runSync({ quiet: false }));
+  $('#btn-pair-out')?.addEventListener('click', (e) => withBusy(e.currentTarget, openPairOut)
+    .catch((err) => toast(err.message, 'error')));
 
   // Automatisch vergrendelen (per apparaat)
   $('#auto-lock')?.addEventListener('change', async (e) => {
