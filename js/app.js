@@ -26,7 +26,7 @@
 import { h, today } from './core/dom.js';
 import { APP } from './config.js';
 import { dropdown } from './dropdown.js';
-import { newRecord, alive, findById, updateById, removeById, mergeCollections, purgeTombstones } from './core/records.js';
+import { newRecord, alive, findById, updateById, removeById, mergeCollections } from './core/records.js';
 import { SEED } from './seed.js';
 import { platformIcon, platformKey, platformRank } from './platforms.js';
 import { findCandidates, findPage, lookupInput, loadCore, loadSummary, prefetch, candidateFrom, coreWikiUrl } from './gameinfo.js';
@@ -41,7 +41,6 @@ import { splitSeedVersions, relatedIndex, linkKey } from './versions.js';
 import { startEnrich, stopEnrich, onProgress, progress, toStored, notFound, putInfo, infoChanged, bestCandidate } from './enrich.js';
 
 const SCHEMA = 9;
-const TOMBSTONE_DAYS = 180;
 
 const STATUS = {
   backlog: { label: 'Backlog', icon: '' },
@@ -190,8 +189,9 @@ export const app = {
 
   migrate(data) {
     data.games ??= [];
-    data.games = purgeTombstones(data.games, TOMBSTONE_DAYS);
-    data.gameInfo = purgeTombstones(data.gameInfo ?? [], TOMBSTONE_DAYS); // schema 3
+    data.gameInfo ??= [];
+    // Verwijdermarkeringen blijven bewaard. PWA-Core registreert ze eerst in
+    // __pwaSync en ruimt ze pas op nadat alle actieve apparaten ze hebben bevestigd.
     // Schema 2: games zonder `years` (van vóór deze versie, of net aangemaakt
     // op een apparaat met een oudere versie) krijgen hun jaar- en platformlabels
     // uit de titel. Dit is voorspelbaar, dus elk apparaat komt op hetzelfde uit;
