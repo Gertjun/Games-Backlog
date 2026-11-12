@@ -1,0 +1,13 @@
+{
+  "name": "games-backlog-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "node --test tests/*.test.js tests/unit/*.test.js",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

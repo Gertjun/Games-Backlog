@@ -34,9 +34,22 @@ function belongsToOtherApp(userHandle) {
 }
 
 export async function isSupported() {
-  if (!window.PublicKeyCredential || !navigator.credentials) return false;
+  const credentialApi = window.PublicKeyCredential;
+  if (!credentialApi || !navigator.credentials) return false;
   try {
-    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!(await credentialApi.isUserVerifyingPlatformAuthenticatorAvailable())) return false;
+    // Browser capability is advisory: the selected authenticator must still
+    // prove PRF support through the actual create()/get() extension result.
+    if (typeof credentialApi.getClientCapabilities === 'function') {
+      try {
+        const capabilities = await credentialApi.getClientCapabilities();
+        if (capabilities?.['extension:prf'] === false) return false;
+      } catch {
+        // Older/partial implementations may expose the method but fail it.
+        // Keep the password path available and allow a user-initiated attempt.
+      }
+    }
+    return true;
   } catch {
     return false;
   }
@@ -44,6 +57,19 @@ export async function isSupported() {
 
 export const isEnrolled = () => localStorage.getItem(STORE_KEY) !== null;
 export const disable = () => localStorage.removeItem(STORE_KEY);
+
+function readPrfSecret(out) {
+  if (!out) throw new Error('Deze browser of passkey levert geen PRF-resultaat. Ontgrendel met je wachtwoord of kies een andere passkey.');
+  const bytes = out instanceof ArrayBuffer
+    ? new Uint8Array(out)
+    : ArrayBuffer.isView(out)
+      ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength)
+      : null;
+  if (!bytes || bytes.byteLength !== 32) {
+    throw new Error('De authenticator leverde geen geldig PRF-resultaat van 32 bytes. Ontgrendel met je wachtwoord of kies een andere passkey.');
+  }
+  return bytes;
+}
 
 async function evaluatePrf(credentialId, prfSalt) {
   const assertion = await navigator.credentials.get({
@@ -56,8 +82,7 @@ async function evaluatePrf(credentialId, prfSalt) {
     },
   });
   const out = assertion.getClientExtensionResults().prf?.results?.first;
-  if (!out) throw new Error('Deze browser of passkey ondersteunt ontgrendelen niet (PRF ontbreekt).');
-  return new Uint8Array(out);
+  return readPrfSecret(out);
 }
 
 /** Pakt de datasleutel in met het PRF-geheim en bewaart dat op dit apparaat. */
@@ -97,12 +122,12 @@ export async function enroll(dataKey) {
 
   const ext = cred.getClientExtensionResults();
   if (ext.prf?.enabled === false) {
-    throw new Error('Deze passkey ondersteunt ontgrendelen niet (PRF). Gebruik je wachtwoord.');
+    throw new Error('Deze passkey ondersteunt PRF niet. Gebruik je wachtwoord of kies een andere passkey.');
   }
   const credentialId = new Uint8Array(cred.rawId);
   // Sommige platforms geven het PRF-resultaat pas bij een get()-aanroep.
   const secret = ext.prf?.results?.first
-    ? new Uint8Array(ext.prf.results.first)
+    ? readPrfSecret(ext.prf.results.first)
     : await evaluatePrf(credentialId, prfSalt);
 
   await store(dataKey, credentialId, prfSalt, secret);
@@ -126,8 +151,8 @@ export async function enrollExisting(dataKey) {
     throw new Error(`Deze passkey hoort bij een andere app. Kies "${APP.name} – ontgrendelen".`);
   }
   const out = assertion.getClientExtensionResults().prf?.results?.first;
-  if (!out) throw new Error('Deze passkey ondersteunt ontgrendelen niet (PRF). Kies een andere of maak een nieuwe.');
-  await store(dataKey, new Uint8Array(assertion.rawId), prfSalt, new Uint8Array(out));
+  if (!out) throw new Error('Deze passkey ondersteunt PRF niet. Kies een andere passkey; je kunt de kluis ook met je wachtwoord openen.');
+  await store(dataKey, new Uint8Array(assertion.rawId), prfSalt, readPrfSecret(out));
 }
 
 /** Geeft de datasleutel terug na succesvolle biometrie. */

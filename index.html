@@ -168,6 +168,11 @@
               <button id="btn-sync-now" class="btn btn-primary" type="button">Nu synchroniseren</button>
               <button id="btn-pair-out" class="btn" type="button" hidden>Ander apparaat koppelen</button>
             </div>
+            <section id="sync-devices-section" hidden>
+              <h3>Gekoppelde apparaten</h3>
+              <p class="hint">Een afgemeld apparaat kan niet meer synchroniseren. Eventuele wijzigingen die daar nog niet gesynchroniseerd zijn, gaan verloren.</p>
+              <div id="sync-devices" class="stack"></div>
+            </section>
             <details id="sync-connection" class="disclosure">
               <summary>Verbinding met GitHub</summary>
               <p class="hint">Gebruik een <strong>private</strong> repo en een fine-grained token met alleen “Contents: Read and write” op die repo. Het token blijft versleuteld op dit apparaat.</p>

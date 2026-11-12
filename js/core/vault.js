@@ -14,6 +14,7 @@
 
 import { APP } from '../config.js';
 import * as c from './crypto.js';
+import { SYSTEM_KEY, collectDeletions, mergeSyncStates, registerDevice, acknowledgeDeletions, deactivateDevice, reconcileData, reconcileBackup, applyDeletionLedger } from './deletions.js';
 
 const P = APP.storagePrefix;
 export const KEYS = { vault: `${P}:vault`, device: `${P}:device`, sync: `${P}:sync` };
@@ -154,9 +155,11 @@ export async function restoreBackup(env, password) {
   const { key, plain } = await openEnvelope(env, password);
   const sameKey = await c.sameKey(key, dataKey);
   await flush();
-  save(KEYS.vault, env);
-  installEnvelope(env, key, plain);
+  // Bewaar de verwijdergeschiedenis van de huidige kluis vóór de back-up wordt geïnstalleerd.
+  const safePlain = reconcileBackup(plain, data);
+  installEnvelope(env, key, safePlain);
   updateSyncMeta({ dirty: true, keyDirty: true, force: true });
+  await persist({ reencrypt: true });
   return { sameKey };
 }
 
@@ -252,6 +255,94 @@ export function getSyncMeta() {
 }
 export const setSyncMeta = (meta) => save(KEYS.sync, meta);
 export const updateSyncMeta = (patch) => save(KEYS.sync, { ...getSyncMeta(), ...patch });
+
+
+const DEVICE_ID_KEY = `${P}:device-id`;
+export function getDeviceId() {
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(DEVICE_ID_KEY, id); }
+  return id;
+}
+export async function captureDeletionHistory() {
+  requireUnlocked();
+  const deletions = collectDeletions(data);
+  const state = mergeSyncStates(data[SYSTEM_KEY], null);
+  const before = JSON.stringify(state.deletions);
+  for (const [key, time] of Object.entries(deletions)) state.deletions[key] = Math.max(Number(state.deletions[key]) || 0, Number(time) || 0);
+  if (before !== JSON.stringify(state.deletions)) {
+    data = { ...data, [SYSTEM_KEY]: state }; revision++;
+    updateSyncMeta({ dirty: true }); await persist({ reencrypt: true });
+  }
+}
+export async function prepareSyncData() {
+  requireUnlocked();
+  await captureDeletionHistory();
+  const id = getDeviceId();
+  let state = registerDevice(data[SYSTEM_KEY], id);
+  for (const [key, time] of Object.entries(collectDeletions(data))) state.deletions[key] = Math.max(Number(state.deletions[key]) || 0, Number(time) || 0);
+  state = acknowledgeDeletions(state, id);
+  const nextData = applyDeletionLedger({ ...data, [SYSTEM_KEY]: state });
+  if (JSON.stringify(nextData) !== JSON.stringify(data)) {
+    data = nextData; revision++;
+    updateSyncMeta({ dirty: true }); await persist({ reencrypt: true });
+  }
+}
+export function reconcileRemoteData(remoteData, migrate) {
+  const raw = structuredClone(remoteData || {});
+  const state = mergeSyncStates(data?.[SYSTEM_KEY], raw[SYSTEM_KEY]);
+  for (const [key, time] of Object.entries(collectDeletions(raw))) state.deletions[key] = Math.max(Number(state.deletions[key]) || 0, Number(time) || 0);
+  raw[SYSTEM_KEY] = state;
+  const migrated = migrate(structuredClone(raw)) || {};
+  migrated[SYSTEM_KEY] = mergeSyncStates(raw[SYSTEM_KEY], migrated[SYSTEM_KEY]);
+  const next = reconcileBackup(migrated, data);
+  next[SYSTEM_KEY] = acknowledgeDeletions(next[SYSTEM_KEY], getDeviceId());
+  return next;
+}
+export function mergeRemoteData(remoteData, migrate, appMerge) {
+  const raw = structuredClone(remoteData || {});
+  const state = mergeSyncStates(data?.[SYSTEM_KEY], raw[SYSTEM_KEY]);
+  for (const [key, time] of Object.entries(collectDeletions(raw))) state.deletions[key] = Math.max(Number(state.deletions[key]) || 0, Number(time) || 0);
+  raw[SYSTEM_KEY] = state;
+  const migrated = migrate(structuredClone(raw)) || {};
+  migrated[SYSTEM_KEY] = mergeSyncStates(raw[SYSTEM_KEY], migrated[SYSTEM_KEY]);
+  const next = reconcileData(data, migrated, appMerge);
+  next[SYSTEM_KEY] = acknowledgeDeletions(next[SYSTEM_KEY], getDeviceId());
+  return next;
+}
+export function reconcileRestoredBackup(remoteData) {
+  const next = reconcileBackup(data, remoteData);
+  next[SYSTEM_KEY] = acknowledgeDeletions(next[SYSTEM_KEY], getDeviceId());
+  return next;
+}
+
+
+export function getSyncDevices() {
+  requireUnlocked();
+  const state = data[SYSTEM_KEY] || { devices: {}, deletions: {} };
+  const currentId = getDeviceId();
+  const deletionKeys = Object.keys(state.deletions || {});
+  const devices = Object.entries(state.devices || {}).map(([id, device]) => ({
+    id,
+    current: id === currentId,
+    registered: true,
+    createdAt: device.createdAt || null,
+    lastSeenAt: device.lastSeenAt || null,
+    deactivatedAt: device.deactivatedAt || null,
+    acknowledgedCount: deletionKeys.filter((key) => Number(device.acknowledged?.[key]) >= Number(state.deletions[key])).length,
+    deletionCount: deletionKeys.length,
+  }));
+  if (!devices.some((device) => device.current)) {
+    devices.unshift({ id: currentId, current: true, registered: false, lastSeenAt: null, deactivatedAt: null, acknowledgedCount: 0, deletionCount: deletionKeys.length });
+  }
+  return devices;
+}
+
+export async function deactivateSyncDevice(deviceId) {
+  requireUnlocked();
+  if (deviceId === getDeviceId()) throw new Error('Dit apparaat kun je hier niet afmelden. Gebruik een ander gekoppeld apparaat.');
+  const state = deactivateDevice(data[SYSTEM_KEY], deviceId);
+  await setData(applyDeletionLedger({ ...data, [SYSTEM_KEY]: state }));
+}
 
 // ---------- Apparaatinstellingen (versleuteld, worden NIET gesynchroniseerd) ----------
 

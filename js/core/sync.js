@@ -4,7 +4,7 @@
 // - Alleen lokaal veranderd                           → uploaden
 // - Alleen op GitHub veranderd                        → downloaden
 // - Beide veranderd                                   → app.merge(local, remote), dan uploaden
-// - Back-up teruggezet (force)                        → lokale versie overschrijft GitHub
+// - Back-up teruggezet (force)                        → verwijdergeschiedenis van remote blijft behouden
 // - Gegevens op GitHub komen van een nieuwere app-versie → stoppen (UpdateRequiredError)
 // Gelijktijdige wijziging tijdens het synchroniseren → automatisch opnieuw proberen.
 
@@ -50,6 +50,7 @@ async function upload(gh, sha, message) {
 }
 
 async function once(gh, { merge, migrate = (d) => d, schemaVersion = Infinity }) {
+  await vault.prepareSyncData();
   await vault.flush();
   const startRev = vault.getRevision();
   const meta = vault.getSyncMeta();
@@ -60,7 +61,11 @@ async function once(gh, { merge, migrate = (d) => d, schemaVersion = Infinity })
     return 'uploaded';
   }
   if (meta.force) {
-    await upload(gh, remote.sha, 'back-up teruggezet');
+    const currentRemote = await vault.decryptRemote(remote.envelope);
+    if ((currentRemote?.schema ?? 0) > schemaVersion) throw new UpdateRequiredError();
+    const restored = vault.reconcileRestoredBackup(currentRemote);
+    await vault.adoptRemote(vault.getEnvelope(), restored, remote.sha, { keepLocal: true });
+    await upload(gh, remote.sha, 'back-up hersteld met behouden verwijdergeschiedenis');
     return 'restored';
   }
   if (remote.sha === meta.sha) {
@@ -74,18 +79,20 @@ async function once(gh, { merge, migrate = (d) => d, schemaVersion = Infinity })
 
   const decrypted = await vault.decryptRemote(remote.envelope);
   if ((decrypted?.schema ?? 0) > schemaVersion) throw new UpdateRequiredError();
-  const remoteData = migrate(decrypted);
+  const remoteData = !meta.dirty
+    ? vault.reconcileRemoteData(decrypted, migrate)
+    : vault.mergeRemoteData(decrypted, migrate, merge);
 
   // Lokaal gewijzigd terwijl we aan het ophalen waren? Dan opnieuw beginnen.
   if (vault.getRevision() !== startRev) throw new ConflictError();
 
   if (!meta.dirty) {
-    await vault.adoptRemote(remote.envelope, remoteData, remote.sha, { keepLocal: false });
-    vault.updateSyncMeta({ lastSyncAt: Date.now() });
+    await vault.adoptRemote(remote.envelope, remoteData, remote.sha, { keepLocal: true });
+    await upload(gh, remote.sha, 'opgehaald en verwijdergeschiedenis bijgewerkt');
     return 'downloaded';
   }
 
-  const merged = merge(vault.getData(), remoteData);
+  const merged = remoteData;
   await vault.adoptRemote(remote.envelope, merged, remote.sha, { keepLocal: true });
   await upload(gh, remote.sha, 'samengevoegd');
   return 'merged';
