@@ -12,7 +12,7 @@ Laatst bijgewerkt: 12 november 2026 · versie **1.34.2**
 - `storagePrefix` (`games-backlog`), `defaultDataPath` (`games-backlog/vault.json`) en app-schema 9 ongewijzigd.
 - Automatische opruiming van tombstones na 180 dagen verwijderd voor zowel `games` als `gameInfo`; de Core deletion ledger bewaart verwijderingen totdat actieve apparaten hebben bevestigd.
 - Apparaatbeheer toegevoegd aan Instellingen → Synchronisatie.
-- Unit-, contract-, pin-, precache- en Playwright-tests en CI toegevoegd. Resultaten volgen na de eerste CI-run.
+- CI run #43290141236 geslaagd: 86 unit-/contracttests, 2 Playwright-tests (Chromium desktop en WebKit/iPhone 13), Core-pin 13/13 en precachecontrole met 13 Core-bestanden en 39 statische entries.
 - Geen productie-datarepo, kluis, token of gebruikersgegevens benaderd. Geen handmatige iPhone-/twee-apparatentest uitgevoerd.
 
 ## 1. Werkwijze
