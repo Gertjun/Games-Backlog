@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "coreVersion": "1.0.0",
+  "releaseStatus": "released",
+  "source": {
+    "repository": "Gertjun/PWA-Template",
+    "ref": "main",
+    "commit": "0f538f8acf40d086df38e9bc4ed2cd875925c569"
+  },
+  "allowlist": [
+    "js/core/biometric.js",
+    "js/core/crypto.js",
+    "js/core/deletions.js",
+    "js/core/dom.js",
+    "js/core/github.js",
+    "js/core/nav.js",
+    "js/core/pair.js",
+    "js/core/records.js",
+    "js/core/shell.js",
+    "js/core/sync.js",
+    "js/core/ui.js",
+    "js/core/vault.js",
+    "css/base.css"
+  ],
+  "checksums": {
+    "js/core/biometric.js": "ad0102b34f329c21ba29c732d6a60c94fe5e995db6ccc1e35cee85daea50e3b4",
+    "js/core/crypto.js": "b919c15e021232ce20b0710b1818c87664d6acc794b9d95baf4f14664b7e636f",
+    "js/core/deletions.js": "2b8a853b86323c0c06d1087e605c0a2467b4079c0b77ecc62031299600410a0d",
+    "js/core/dom.js": "9a2b16ae0fcd5dc547efcca5088f35a532dfe40e94c2cd384f68fce9d913d141",
+    "js/core/github.js": "24e0965bf039aac4b849a9276c803fcf03620a7dfef5785e37320412bae289f5",
+    "js/core/nav.js": "b2e8b22f80e60e3f81d9317ba304229f87c7b80e16b2ef18774a817b7f194184",
+    "js/core/pair.js": "b316a6f48f27386a9bae218deb7c2723e9b25c3e2ca9ff36b18db49972b0bf6e",
+    "js/core/records.js": "2ca462be79cb967dffffad39df80cfe79ec33133b9b14dd79a6d1c1ecfb6f1cf",
+    "js/core/shell.js": "aff712aaecfb02220f7eda7eae98edd0bbb947b8dcf3427d49a61b8ebfe18b60",
+    "js/core/sync.js": "02d1ad95ec5cca889e5bafbdf8703ec288273fe4f7d255d38aa031f7eede2caa",
+    "js/core/ui.js": "798f2da581b01e48741edaff9751e82df14a6445551dc8d40ac9762559869721",
+    "js/core/vault.js": "c38a2d051f76c501e4f3c4b4a037d2be887d89aeeae7d932e54462e2fd368cd4",
+    "css/base.css": "9c44c04888f83cb37817a5d06042dc057d841d29f24628908c1d8f65479869d0"
+  }
+}
