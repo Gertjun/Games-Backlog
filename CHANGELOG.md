@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.34.2 – 2026-11-12
+
+**Gewijzigd**
+- Games Backlog gebruikt nu de officiële PWA-Core v1.0.0, exact vastgepind op de releasecommit en gecontroleerd met SHA-256-checksums.
+- Verwijdermarkeringen van games en game-informatie worden niet meer na 180 dagen automatisch verwijderd. De Core bewaart ze totdat alle actieve apparaten de verwijdering hebben bevestigd.
+
+**Toegevoegd**
+- Overzicht en beheer van gekoppelde apparaten via Instellingen → Synchronisatie.
+- Geautomatiseerde Core-contract-, migratie-, checksum-, precache- en browserrooktests met GitHub Actions.
+
+Bestaande kluis, opslagprefix, datapad, schema 9 en biometrische opslag blijven behouden.
+
 ## 1.34.1 – 2026-11-11
 
 **Verbeterd**

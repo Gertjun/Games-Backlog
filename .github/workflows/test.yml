@@ -1,0 +1,71 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+      - 'test/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit, contract and release-pin tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run unit and contract tests
+        run: npm run test:unit
+      - name: Verify official PWA-Core release pin and checksums
+        run: node tools/pin.mjs verify
+      - name: Verify service-worker precache
+        run: node tools/precache.mjs
+
+  e2e:
+    name: Playwright browser smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run browser smoke tests
+        run: npm run test:e2e -- --reporter=list,html
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+      - name: Upload Playwright reports and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: games-backlog-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

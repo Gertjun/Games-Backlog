@@ -1,5 +1,9 @@
 # DECISIONS – Games Backlog
 
+### D11 – Verwijderhistorie via PWA-Core deletion ledger (12 nov 2026)
+- **Besluit:** `games` en `gameInfo` ruimen tombstones niet meer op basis van leeftijd op. De Core registreert verwijderingen in `__pwaSync` en verwijdert tombstones pas nadat alle actieve apparaten de verwijdering hebben bevestigd. De blijvende graveyard voorkomt dat oude back-ups of apparaten verwijderde records terugzetten.
+- **Waarom:** een apparaat kan langer dan 180 dagen offline zijn; een tijdgebaseerde purge kan dan verwijderingen verliezen. App-schema 9 blijft ongewijzigd.
+
 Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; een nieuw besluit vervangt een oud ("vervangt D3").
 
 ### D1 – Eén kaart per titel en platform (nov 2026)
