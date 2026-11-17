@@ -10,7 +10,7 @@ import { webcrypto } from 'node:crypto';
 // een geïsoleerde tijdelijke app-configuratie; wijzig nooit een echte app-config.
 const root = await mkdtemp(path.join(tmpdir(), 'pwa-core-vault-'));
 await mkdir(path.join(root, 'js', 'core'), { recursive: true });
-for (const file of ['vault.js', 'crypto.js', 'deletions.js']) {
+for (const file of ['vault.js', 'vault-factory.js', 'crypto.js', 'deletions.js']) {
   await cp(new URL(`../js/core/${file}`, import.meta.url), path.join(root, 'js', 'core', file));
 }
 await writeFile(path.join(root, 'js', 'config.js'), `
