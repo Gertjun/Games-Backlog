@@ -1,3 +1,11 @@
+## 1.34.3 – 2026-11-17
+
+**Gewijzigd**
+- Bijgewerkt naar de officiële PWA-Core v1.2.2, exact vastgepind op de releasecommit en gecontroleerd met SHA-256-checksums.
+- De gedeelde kern bevat verbeteringen voor gelijktijdige tabbladen, opslagfouten, passkey-afhandeling en het herstellen van records na verwijdering.
+
+Bestaande kluis, opslagprefix, datapad, schema 9 en biometrische opslag blijven behouden.
+
 # Changelog
 
 ## 1.34.2 – 2026-11-12
