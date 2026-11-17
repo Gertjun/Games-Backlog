@@ -16,12 +16,12 @@ Dezelfde afspraken gelden voor al Geerts apps (Cryptotracker, Vaste Lasten, Ener
   - PATCH voor een kleine verbetering of foutoplossing.
   - **Versie** in `js/config.js` (`version`) én `sw.js` (`VERSION`) gelijk ophogen.
   - **`CHANGELOG.md`** bijwerken in gewone taal, en **`WISHLIST.md`**: wat gebouwd is, gaat van de wishlist naar de changelog.
-- **Testen vóór elke push**, daarna rechtstreeks naar `main` (geen force-push, geschiedenis niet herschrijven). Gaat er iets mis: `git revert` en pushen.
-- **`js/core/` en `css/base.css` zijn gedeeld** met al Geerts template-apps (PWA-template, MW4 Camo Tracker, Games Backlog, Energieverbruik). Wijzig ze alleen generiek, en zet de wijziging daarna ook in de template en de andere apps, zodat de kern overal gelijk blijft.
+- **Testen vóór elke PR.** Werk op een featurebranch en lever wijzigingen via een PR aan; niet rechtstreeks naar `main`. Geen force-push of geschiedenis herschrijven. Merge, release, tag of andere bindende GitHub-acties alleen na expliciet akkoord.
+- **`js/core/` en `css/base.css` komen uit `Gertjun/PWA-Core`.** Ontwikkel gedeelde wijzigingen eerst in PWA-Core, publiceer ze als officiële release en pin die release daarna per app via een gecontroleerde PR. Kopieer Core-wijzigingen niet automatisch naar andere apps of de oude template.
 - Ga je in tegen een besluit uit `DECISIONS.md`? Zeg dat en vraag het eerst.
 - Nooit iets doen met de data-repository of tokens.
 
 ## Aan het eind van een sessie (altijd)
 1. **`NOTES.md`**: versie en datum bovenaan, open punten bijwerken, één of twee regels in het sessielog (nieuwste bovenaan).
 2. **`DECISIONS.md`**: een nieuw `D<n>`-besluit voor elke keuze die een volgende sessie moet kennen. Oude besluiten pas je niet aan; een nieuw besluit vervangt een oud ("vervangt D3").
-3. Push naar `main`.
+3. Lever de wijziging via een PR aan en wacht op expliciet akkoord voordat je merge uitvoert.
