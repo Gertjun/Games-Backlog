@@ -18,6 +18,8 @@ export const APP = { storagePrefix: 'vault-contract-test', kdfIterations: 1000 }
 `);
 
 class MemoryStorage {
+  get length() { return Object.keys(this).length; }
+  key(index) { return Object.keys(this)[index] ?? null; }
   getItem(key) { return Object.hasOwn(this, key) ? this[key] : null; }
   setItem(key, value) { this[key] = String(value); }
   removeItem(key) { delete this[key]; }
