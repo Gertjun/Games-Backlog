@@ -79,7 +79,7 @@ test('graveyard voorkomt dat een ouder apparaat een verwijderde game opnieuw toe
   };
   const staleRemote = {
     schema: 9,
-    games: [{ id: 'removed-game', title: 'Oude game', updatedAt: Date.now() }],
+    games: [{ id: 'removed-game', title: 'Oude game', updatedAt: oldTimestamp - 1 }],
     gameInfo: [{ id: 'removed-info', title: 'Oude metadata', updatedAt: Date.now() }],
   };
 
