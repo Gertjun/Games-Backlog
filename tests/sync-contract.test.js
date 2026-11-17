@@ -9,7 +9,7 @@ import { webcrypto } from 'node:crypto';
 // Gebruik geïsoleerde modules/configuratie en een nep-GitHub Contents API.
 const root = await mkdtemp(path.join(tmpdir(), 'pwa-core-sync-'));
 await mkdir(path.join(root, 'js', 'core'), { recursive: true });
-for (const file of ['sync.js', 'vault.js', 'github.js', 'crypto.js', 'deletions.js']) {
+for (const file of ['sync.js', 'sync-factory.js', 'vault.js', 'vault-factory.js', 'github.js', 'crypto.js', 'deletions.js']) {
   await cp(new URL(`../js/core/${file}`, import.meta.url), path.join(root, 'js', 'core', file));
 }
 await writeFile(path.join(root, 'js', 'config.js'), `
