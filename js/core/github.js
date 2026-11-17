@@ -27,7 +27,7 @@ function describe(status, detail) {
   return `GitHub-fout ${status}${detail ? `: ${detail}` : ''}`;
 }
 
-export function createClient({ owner, repo, branch, path, token }) {
+export function createClient({ owner, repo, branch, path, token, signal }) {
   if (!owner || !repo || !path || !token) throw new GitHubError('De GitHub-instellingen zijn onvolledig.');
 
   const base = `${API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
@@ -46,8 +46,10 @@ export function createClient({ owner, repo, branch, path, token }) {
           ...(body ? { 'Content-Type': 'application/json' } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,
+        ...(signal ? { signal } : {}),
       });
-    } catch {
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new GitHubError('Synchronisatie afgebroken.');
       throw new GitHubError('Geen verbinding met GitHub.');
     }
     if (res.ok) return res.json();
