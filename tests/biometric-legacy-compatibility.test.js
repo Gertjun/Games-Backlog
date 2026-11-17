@@ -10,7 +10,7 @@ import { webcrypto } from 'node:crypto';
 // Geen echte lokale kluis of passkey wordt benaderd.
 const root = await mkdtemp(path.join(tmpdir(), 'games-backlog-legacy-passkey-'));
 await mkdir(path.join(root, 'js', 'core'), { recursive: true });
-for (const file of ['biometric.js', 'crypto.js']) {
+for (const file of ['biometric.js', 'biometric-factory.js', 'crypto.js']) {
   await cp(new URL(`../js/core/${file}`, import.meta.url), path.join(root, 'js', 'core', file));
 }
 await writeFile(path.join(root, 'js', 'config.js'), `

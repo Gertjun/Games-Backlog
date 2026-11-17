@@ -2,7 +2,7 @@
 
 Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; een nieuw besluit vervangt een oud ("vervangt D3").
 
-### D11 – Verwijderhistorie via PWA-Core deletion ledger (12 nov 2026)
+### D12 – PWA-Core is de centrale gedeelde kern (17 nov 2026)\n- **Besluit:** wijzigingen aan gedeelde kernfunctionaliteit worden eerst in `Gertjun/PWA-Core` ontwikkeld en als officiële, onveranderlijke release gepubliceerd. Apps pinnen een specifieke Core-release met commit en manifestchecksum; een upgrade gebeurt per app via een gecontroleerde PR. Geen automatische kopieeractie naar alle apps of de oude template.\n- **Waarom:** één controleerbare bron voorkomt dat gedeelde code tussen apps uiteenloopt en voorkomt onbedoelde verspreiding van app-specifieke wijzigingen.\n\n### D11 – Verwijderhistorie via PWA-Core deletion ledger (12 nov 2026)
 - **Besluit:** `games` en `gameInfo` ruimen tombstones niet meer op basis van leeftijd op. De Core registreert verwijderingen in `__pwaSync` en verwijdert tombstones pas nadat alle actieve apparaten de verwijdering hebben bevestigd. De blijvende graveyard voorkomt dat oude back-ups of apparaten verwijderde records terugzetten.
 - **Waarom:** een apparaat kan langer dan 180 dagen offline zijn; een tijdgebaseerde purge kan dan verwijderingen verliezen. App-schema 9 blijft ongewijzigd.
 

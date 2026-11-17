@@ -3,7 +3,7 @@
 // BIJ ELKE RELEASE: VERSION ophogen (gelijk aan js/config.js).
 // NIEUW BESTAND?    Toevoegen aan PRECACHE.
 
-const VERSION = '1.34.2';
+const VERSION = '1.34.3';
 
 // De cache-naam bevat het pad van de app, zodat meerdere apps onder
 // <gebruiker>.github.io elkaars cache niet opruimen.
@@ -34,14 +34,20 @@ const PRECACHE = [
   './js/analysis.js',
   './js/dropdown.js',
   './js/suggest.js',
+  './js/core/session-lock-factory.js',
+  './js/core/session-lock.js',
   './js/core/shell.js',
+  './js/core/vault-factory.js',
   './js/core/vault.js',
   './js/core/crypto.js',
   './js/core/deletions.js',
+  './js/core/biometric-factory.js',
   './js/core/biometric.js',
   './js/core/github.js',
+  './js/core/sync-factory.js',
   './js/core/sync.js',
   './js/core/records.js',
+  './js/core/device-pairing.js',
   './js/core/dom.js',
   './js/core/ui.js',
   './js/core/pair.js',
