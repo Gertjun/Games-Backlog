@@ -20,7 +20,9 @@ Laatst bijgewerkt: 18 november 2026 · versie **1.34.3** · PWA-Core **v1.2.2**
 - Games Backlog staat op `main` met appversie **1.34.3** en de officiële PWA-Core **v1.2.2**.
 - PR #2 is gemerged. De app pint exact tag `v1.2.2`, commit `14dc3ad12c56a448f7de47e2c4c39347475355f6` en manifest-SHA256 `702f8394d4ffd87072b33d6a1a6a3aa59b6124253334aef08772385037dc7616`.
 - Opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en schema 9 zijn behouden.
-- De eerdere tekst dat CI en browserrooktests nog moesten draaien is achterhaald: de migratie-PR is gesloten en gemerged. Een afzonderlijke fysieke praktijktest wordt hier niet als uitgevoerd geregistreerd zolang daar geen expliciete bevestiging voor is.
+- De eerdere tekst dat CI en browserrooktests nog moesten draaien is achterhaald: de migratie-PR is gesloten en gemerged.
+- Praktijktest op 18 november 2026: testspel aangemaakt op iPhone en na synchronisatie zichtbaar op laptop; titel op iPhone gewijzigd en na synchronisatie zichtbaar op laptop; testspel op laptop verwijderd en na synchronisatie verdwenen op beide apparaten. Dit bevestigt de app-specifieke create/update/delete-synchronisatie tussen iPhone en laptop voor deze test.
+- De gedeelde PWA-Core-functionaliteit, waaronder offline herstel, is afzonderlijk praktisch getest en geaccepteerd via Vaste Lasten. Deze Core-tests zijn niet opnieuw volledig herhaald in Games Backlog.
 - Geen productie-datarepo, kluis, token of gebruikersgegevens benaderd.
 
 
