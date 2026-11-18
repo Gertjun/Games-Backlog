@@ -6,6 +6,8 @@ Laatst bijgewerkt: 18 november 2026 · versie **1.34.3** · PWA-Core **v1.2.2**
 
 ---
 
+- **18 november 2026:** PWA-Core v1.3.0 geïntegreerd. De gedeelde koppelcode draagt uitsluitend de GitHub Sync-configuratie over; het kluiswachtwoord blijft een afzonderlijke invoer.
+
 ## Stand (12 november 2026) – pilotmigratie PWA-Core v1.0.0
 - Featurebranch `feature/pwa-core-v1.0.0-migration` vanaf Games Backlog `main`.
 - Alle 13 allowlisted Core-bestanden overgenomen van de officiële tag `v1.0.0`; release-pin en manifestchecksum vastgelegd.
