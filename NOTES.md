@@ -2,7 +2,7 @@
 
 De **actuele stand**: versie, open punten en sessielog. Werk dit bij aan het eind van elke sessie (zie `CLAUDE.md`). Besluiten staan in `DECISIONS.md`, wensen in `WISHLIST.md`.
 
-Laatst bijgewerkt: 17 november 2026 · versie **1.34.3**
+Laatst bijgewerkt: 18 november 2026 · versie **1.34.3** · PWA-Core **v1.2.2**
 
 ---
 
@@ -15,12 +15,14 @@ Laatst bijgewerkt: 17 november 2026 · versie **1.34.3**
 - CI run #43290501399 geslaagd: 87 unit-/contracttests (inclusief legacy-passkeycompatibiliteit), 2 Playwright-tests (Chromium desktop en WebKit/iPhone 13), Core-pin 13/13 en precachecontrole met 13 Core-bestanden en 39 statische entries.
 - Geen productie-datarepo, kluis, token of gebruikersgegevens benaderd. Geen handmatige iPhone-/twee-apparatentest uitgevoerd.
 
-## Stand (17 november 2026) – migratie naar PWA-Core v1.2.2
-- Featurebranch `chore/pwa-core-v1.2.2-migration` vanaf `main` commit `86f2fd75758e1731dbcd091fe37ccb099d57bcab`.
-- Core-bestanden worden exact overgenomen van de officiële tag `v1.2.2`; manifest en release-pin verwijzen naar commit `14dc3ad12c56a448f7de47e2c4c39347475355f6`.
-- App-versie verhoogd naar 1.34.3; opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en schema 9 blijven ongewijzigd.
-- Synthetische regressietest voor de deletion-ledger-revival wordt toegevoegd; CI en browserrooktests moeten nog draaien.
+## Actuele stand – 18 november 2026
+
+- Games Backlog staat op `main` met appversie **1.34.3** en de officiële PWA-Core **v1.2.2**.
+- PR #2 is gemerged. De app pint exact tag `v1.2.2`, commit `14dc3ad12c56a448f7de47e2c4c39347475355f6` en manifest-SHA256 `702f8394d4ffd87072b33d6a1a6a3aa59b6124253334aef08772385037dc7616`.
+- Opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en schema 9 zijn behouden.
+- De eerdere tekst dat CI en browserrooktests nog moesten draaien is achterhaald: de migratie-PR is gesloten en gemerged. Een afzonderlijke fysieke praktijktest wordt hier niet als uitgevoerd geregistreerd zolang daar geen expliciete bevestiging voor is.
 - Geen productie-datarepo, kluis, token of gebruikersgegevens benaderd.
+
 
 ## 1. Werkwijze
 Zie `CLAUDE.md`.
