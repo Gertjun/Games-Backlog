@@ -2,9 +2,11 @@
 
 De **actuele stand**: versie, open punten en sessielog. Werk dit bij aan het eind van elke sessie (zie `CLAUDE.md`). Besluiten staan in `DECISIONS.md`, wensen in `WISHLIST.md`.
 
-Laatst bijgewerkt: 18 november 2026 · versie **1.34.3** · PWA-Core **v1.2.2**
+Laatst bijgewerkt: 18 november 2026 · `main` 1.34.3 / PWA-Core v1.2.2; PR #5 stelt 1.34.4 / PWA-Core v1.3.0 voor
 
 ---
+
+- **18 november 2026:** PR #5 bereidt PWA-Core v1.3.0 voor. De gedeelde PAIR-2-koppelcode draagt uitsluitend de GitHub Sync-configuratie over; het kluiswachtwoord blijft een afzonderlijke invoer. CI op de PR-branch is geslaagd; nog niet gemerged of praktisch getest.
 
 ## Stand (12 november 2026) – pilotmigratie PWA-Core v1.0.0
 - Featurebranch `feature/pwa-core-v1.0.0-migration` vanaf Games Backlog `main`.

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "coreVersion": "1.2.2",
+  "coreVersion": "1.3.0",
   "releaseStatus": "released",
   "source": {
     "repository": "Gertjun/PWA-Core",
     "ref": "main",
-    "commit": "fa7b6a8b5ed5fa955a32c646ef2d1cee2bf2c0f0"
+    "commit": "fd47638355d975d85dfc376b07810b4b0e4b2a63"
   },
   "allowlist": [
     "css/base.css",
@@ -34,15 +34,15 @@
     "js/core/biometric.js": "e6198102ac261cfb1455124d8782ad33fd0ca7de047b1ed9ee5af077ad0623a4",
     "js/core/crypto.js": "b919c15e021232ce20b0710b1818c87664d6acc794b9d95baf4f14664b7e636f",
     "js/core/deletions.js": "de8837db085ffb548fdfeadc7f0f192b14e362744fb7ce8cec4effc2193b08be",
-    "js/core/device-pairing.js": "24d4047146660b6cacbfaecc13d32b068ce46b056821a07a6dcc9dbdd961ce1a",
+    "js/core/device-pairing.js": "d3484a2b54b939133a6b8a84dc5492fc8a172dd1b9da9ca458c243b3b18aa199",
     "js/core/dom.js": "9a2b16ae0fcd5dc547efcca5088f35a532dfe40e94c2cd384f68fce9d913d141",
     "js/core/github.js": "970b1e0b1da88bd93c0ef3a4c3c2aea084403419271f4484a7ffba653e73ecb9",
     "js/core/nav.js": "b2e8b22f80e60e3f81d9317ba304229f87c7b80e16b2ef18774a817b7f194184",
-    "js/core/pair.js": "b316a6f48f27386a9bae218deb7c2723e9b25c3e2ca9ff36b18db49972b0bf6e",
+    "js/core/pair.js": "87824409516057647754ad30e99e6ac9ef010ffe235de35feb566e9d194d841a",
     "js/core/records.js": "2ca462be79cb967dffffad39df80cfe79ec33133b9b14dd79a6d1c1ecfb6f1cf",
     "js/core/session-lock-factory.js": "991157d938a11860881426871d6e1e818e75fe870b27f2884cd080bc9e0f9398",
     "js/core/session-lock.js": "991a810532b1b9f8b73324d36818805a918b81e7ab552583970af15e6cb1f6d1",
-    "js/core/shell.js": "92f618effe6c9eed12a14bc914455e5eb1b2fba99678f560fb66764c8f956c9b",
+    "js/core/shell.js": "307f9dcfe87ff3b30ca81bccd059f6ccda701781d9bff1de05bbfd5898e11545",
     "js/core/sync-factory.js": "3ee86ab79c0ebc87f0d43d3c4789bee1dddc6f2f00f6999dcad28a484c36f17c",
     "js/core/sync.js": "edc71b8447bc556a569cdf324673f36a4937c048bf83bdac8c77cf61526c76d4",
     "js/core/ui.js": "798f2da581b01e48741edaff9751e82df14a6445551dc8d40ac9762559869721",
