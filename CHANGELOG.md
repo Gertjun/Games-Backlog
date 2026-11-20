@@ -59,7 +59,7 @@ Je huidige Face ID-instelling blijft werken. Je gegevens veranderen niet.
   - *Alles inklappen* en *Alles uitklappen* worden ook onthouden.
   - *Dit apparaat wissen* (Instellingen) wist deze keuzes ook.
 
-## 1.30.0
+## 1.30.0 · #3
 
 - **Filters en sortering blijven staan.** Status, categorie, serie, platform, jaar, *Weergave* en *Sorteren* worden per apparaat onthouden. Na ontgrendelen of opnieuw opstarten staat alles zoals je het achterliet.
   - Elk apparaat heeft zijn eigen keuzes: je iPhone kan bijvoorbeeld op *Boxart-muur* staan en je laptop op *Per serie*. Ze gaan niet mee met de synchronisatie via GitHub.
@@ -116,7 +116,7 @@ Je huidige Face ID-instelling blijft werken. Je gegevens veranderen niet.
 - Elke weergave onthoudt zijn eigen ingeklapte groepen zolang de app open is, net als de filters. Start de app opnieuw op, dan staat alles weer open.
 - **Nieuwe weergave: Per releasejaar.** Je games gegroepeerd op het eerste jaar van release, oudste eerst. Games zonder jaar staan onderaan onder *Geen jaar*.
 
-## 1.25.0
+## 1.25.0 · #4
 
 - **Slimmer toevoegen.** Typ bij *Game toevoegen* een paar letters van de titel en je ziet suggesties van Wikipedia, met hoesje en jaar. Staat de game al in je lijst, dan zie je dat er meteen bij.
 - Tik op een suggestie en de app vult de titel, het jaar, het platform, de serie en de categorie (Modern of Retro) voor je in. Velden die je zelf al had ingetypt blijven staan.
@@ -281,7 +281,7 @@ Verbeteringen in de lijst, eenmalig doorgevoerd bij het openen van de app. Games
 - Met de pijltjestoetsen omhoog en omlaag loop je door de onderdelen.
 - Op de iPhone staan de instellingen nog steeds onder elkaar, nu wel netjes in kaarten gegroepeerd.
 
-## 1.9.0
+## 1.9.0 · #1, #12
 
 - Nieuw: de knop "Wat ga ik nu spelen?" kiest willekeurig een game uit je backlog. Staan er filters aan (bijvoorbeeld alleen SNES of alleen retro), dan kiest hij alleen daarbinnen. Je ziet de boxart, platforms, jaar en score, en je kunt meteen op "Ga ik spelen" tikken (de game wordt dan Bezig), de details bekijken of een andere suggestie vragen. Een game die je net voorgesteld kreeg, komt niet meteen weer terug.
 - Nieuw: de weergave "Boxart-muur" (bij Weergave). Alle games als hoesjes in een raster, met linksboven een rondje voor Bezig, Uitgespeeld of Gestopt en rechtsonder de score. Tik op een hoesje voor het detailscherm. Zoeken, filters en sorteren werken gewoon. Heeft een game (nog) geen boxart, dan zie je een vlak in de kleur van het platform met de titel.

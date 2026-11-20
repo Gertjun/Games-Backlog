@@ -1,4 +1,32 @@
-# PWA-template
+# Games Backlog
+
+Installeerbare web-app (PWA) om bij te houden welke games Geert op welke console heeft gespeeld (PS5 en retro), op iPhone, iPad en laptop. Gegevens staan versleuteld op het apparaat en synchroniseren als één versleuteld bestand via de private repo `Gertjun/SyncData` (pad `games-backlog/vault.json`). Gebouwd op PWA-Core (`Gertjun/PWA-Core`); de map `js/core/` is die gedeelde kern.
+
+## Waar vind je wat
+
+Elk onderwerp staat op één plek (D11).
+
+| | Vraag | Bestand |
+| --- | --- | --- |
+| Heden | Waar staan we nu, hoe zit het in elkaar? | dit bestand, `README.md` |
+| Toekomst | Wat moet of kan er nog gebeuren? | [`ROADMAP.md`](ROADMAP.md) |
+| Verleden | Wat is er per versie veranderd? | [`CHANGELOG.md`](CHANGELOG.md) |
+| Verleden | Waarom is iets zo gekozen? | [`DECISIONS.md`](DECISIONS.md) |
+
+Werkafspraken voor Claude: [`CLAUDE.md`](CLAUDE.md). De map `docs/` en het deel "Technische basis" hieronder komen uit het PWA-template en beschrijven hoe een nieuwe app wordt opgezet; ze worden hier niet bijgewerkt.
+
+## Stand
+
+Bijgewerkt: 20 november 2026 · `main` **1.34.4** met PWA-Core v1.3.0. Dit blok wordt aan het eind van elke sessie overschreven.
+
+- PWA-Core v1.3.0 met QR-koppeling via PAIR-2 (PR #5) is gemerged; de koppelcode draagt alleen de GitHub Sync-instellingen over, het kluiswachtwoord vul je apart in. Nog niet praktisch getest (ROADMAP #17); de changelog mist 1.34.4 (ROADMAP #16).
+- Opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en app-schema 9 zijn sinds de overstap naar PWA-Core ongewijzigd.
+- Praktijktest op 18 november (1.34.3): een testspel aanmaken, wijzigen en verwijderen synchroniseerde tussen iPhone en laptop. De gedeelde kern (onder meer offline herstel) is getest via Vaste Lasten, niet opnieuw hier.
+- Hoesafbeeldingen via TheGamesDB wachten op een API-sleutel (ROADMAP #15).
+
+---
+
+# Technische basis (uit de PWA-template)
 
 Basis voor installeerbare Progressive Web Apps op GitHub Pages, met:
 
