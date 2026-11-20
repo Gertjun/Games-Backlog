@@ -40,3 +40,8 @@ Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; e
 ### D10 – Navigatie en Instellingen uit de kern (11 nov 2026, 1.34.0)
 - **Besluit:** de app heeft geen eigen `nav.js` en instellingen-opmaak meer; schermen staan in `app.screens` en de schil tekent ze (template D6). De vier schermen uit D3 blijven.
 - **Waarom:** Geert wil al zijn apps dezelfde indeling geven.
+
+### D11 – Documenten naar verleden, heden en toekomst (20 nov 2026)
+- **Besluit:** vier bestanden houden de app bij. Heden: `README.md`, met bovenaan een beschrijving van Games Backlog en een blok "Stand" (vervangt `NOTES.md`; geen sessielog meer). Toekomst: `ROADMAP.md`, de enige takenlijst; punten houden hun nummer en gebouwde punten verdwijnen eruit (vervangt `WISHLIST.md`). Verleden: `CHANGELOG.md` (wat) en `DECISIONS.md` (waarom). Een wijziging alleen aan deze documenten krijgt geen nieuwe appversie.
+- **Waarom:** NOTES, WISHLIST en de changelog herhaalden elkaar en liepen uit de pas (NOTES noemde PR #5 nog als voorstel). Dezelfde indeling geldt voor al Geerts projecten.
+
