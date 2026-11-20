@@ -55,3 +55,7 @@ Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; e
 - **Opgeruimd:** `docs/CLAUDE-INSTRUCTIES.md`, `docs/STARTPROMPT.md` en `tools/setup.mjs` uit de oude PWA-template zijn weggehaald (W18). De werkwijze staat in `CLAUDE.md` en de projectinstructies; een nieuwe app start niet meer vanuit deze repo.
 - **Let op:** er zijn twee besluiten met nummer D11 (verwijderhistorie, 12 nov, en documenten, 20 nov). Ze blijven zo staan; noem bij een verwijzing het onderwerp erbij.
 - **Waarom:** Geert wil al zijn apps dezelfde opbouw geven, zodat elke sessie op dezelfde plekken begint. Een pull request met akkoord voorkomt dat een fout ongezien op zijn telefoon belandt.
+
+### D14 – UI/UX-richtlijnen voor de interface (20 nov 2026)
+- **Besluit:** `ui-ux-richtlijnen.md` uit de projectkennis geldt voor elk nieuw scherm, onderdeel of elke wijziging aan de interface, naast `html-best-practices.md`. `ARCHITECTUUR.md` en `CLAUDE.md` verwijzen ernaar. De app houdt zijn eigen namen voor de kleurvariabelen; de bestaande schermen worden later nagelopen (W20).
+- **Waarom:** Geert wil dat al zijn apps dezelfde, toegankelijke ontwerpregels volgen.
