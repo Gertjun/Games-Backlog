@@ -5,7 +5,7 @@
 
 Bijgewerkt: 20 november 2026 · versie 1.34.4
 
-Elk punt heeft een vast W-nummer dat nooit opnieuw wordt gebruikt (tot 20 november 2026 geschreven als #1, #2 …). Is een punt klaar, dan haal je het hier weg en zet je het nummer in de changelog bij de versie. Ideeën buiten de huidige taak komen hier ook, maar worden niet ongevraagd gebouwd. Volgende vrije nummer: W19.
+Elk punt heeft een vast W-nummer dat nooit opnieuw wordt gebruikt (tot 20 november 2026 geschreven als #1, #2 …). Is een punt klaar, dan haal je het hier weg en zet je het nummer in de changelog bij de versie. Ideeën buiten de huidige taak komen hier ook, maar worden niet ongevraagd gebouwd. Volgende vrije nummer: W20.
 
 ## Eerst
 - W16 **Changelog aanvullen voor 1.34.4** — PWA-Core v1.3.0 en de QR-koppeling via PAIR-2 (PR #5) staan nog niet in de changelog.
@@ -29,7 +29,7 @@ Elk punt heeft een vast W-nummer dat nooit opnieuw wordt gebruikt (tot 20 novemb
 
 - W13 **Dubbele games signaleren** — waarschuwing bij het toevoegen van een game met dezelfde titel en hetzelfde platform.
 - W14 **Export naar CSV** — naast de versleutelde back-up, om de lijst in Excel of Numbers te openen.
-- W18 **Overblijfselen van de PWA-template opruimen** — `docs/CLAUDE-INSTRUCTIES.md`, `docs/STARTPROMPT.md` en `tools/setup.mjs` komen uit de oude template en gelden niet meer (de werkwijze staat nu in `CLAUDE.md` en de projectinstructies). Weghalen of als momentopname markeren. Let op: `tools/setup.mjs` niet meer draaien.
+- W19 **Verouderde opmerking in `css/app.css`** — bovenin verwijst een opmerking nog naar de workflow "Nieuwe app instellen" en `tools/setup.mjs`, die er niet meer zijn. Meenemen bij de eerstvolgende versie die `css/app.css` wijzigt.
 
 ## Bronnen
 

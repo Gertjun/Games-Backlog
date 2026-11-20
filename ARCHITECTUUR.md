@@ -35,10 +35,8 @@ icons/                  App-iconen (icon-1024.png is de bron)
 tests/                  Automatische tests: kerncontracten, migratie (unit/), browser (e2e/)
 tools/pin.mjs           Controleert de PWA-Core-pin
 tools/precache.mjs      Controleert dat alle kernbestanden in PRECACHE staan
-tools/setup.mjs         Overblijfsel van de PWA-template, niet meer in gebruik (W18)
 core-manifest.json      Lijst en controlegetallen van de kernbestanden
 pwa-core.lock.json      Vastgepinde PWA-Core-versie (tag, commit, SHA-256)
-docs/                   Instructies uit de oude PWA-template; gelden niet meer (W18)
 ```
 
 ## Aansluiting op PWA-Core

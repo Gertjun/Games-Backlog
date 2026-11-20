@@ -15,8 +15,6 @@ Elk onderwerp staat op één plek (D13).
 | Verleden | Waarom is iets zo gekozen? | [`DECISIONS.md`](DECISIONS.md) |
 | Werkwijze | Hoe werkt Claude aan deze app (branches, testen, versies)? | [`CLAUDE.md`](CLAUDE.md) |
 
-De map `docs/` komt uit de oude PWA-template en geldt niet meer (W18).
-
 ## Stand
 
 Bijgewerkt: 20 november 2026 · `main` **1.34.4** met PWA-Core v1.3.0. Dit blok wordt aan het eind van elke sessie overschreven.
@@ -25,7 +23,7 @@ Bijgewerkt: 20 november 2026 · `main` **1.34.4** met PWA-Core v1.3.0. Dit blok 
 - Opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en app-schema 9 zijn sinds de overstap naar PWA-Core ongewijzigd.
 - Praktijktest op 18 november (1.34.3): een testspel aanmaken, wijzigen en verwijderen synchroniseerde tussen iPhone en laptop. De gedeelde kern (onder meer offline herstel) is getest via Vaste Lasten, niet opnieuw hier.
 - Hoesafbeeldingen via TheGamesDB wachten op een API-sleutel (W15).
-- Documenten en werkwijze volgen sinds 20 november de uniforme opbouw (D13): nieuw `ARCHITECTUUR.md`, W-nummers in de roadmap, wijzigingen via pull request.
+- Documenten en werkwijze volgen sinds 20 november de uniforme opbouw (D13): nieuw `ARCHITECTUUR.md`, W-nummers in de roadmap, wijzigingen via pull request. De overblijfselen van de oude PWA-template (`docs/`, `tools/setup.mjs`) zijn weggehaald (W18).
 
 ## Synchronisatie instellen
 
