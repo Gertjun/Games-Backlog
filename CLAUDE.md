@@ -13,6 +13,7 @@ Werkafspraken voor Games Backlog. Ze volgen de projectinstructies van het Claude
 - **Eerst vragen** als een wijziging bestaande gegevens raakt, het datamodel verandert, de gedeelde kern raakt of ingaat tegen een besluit in `DECISIONS.md`. Is iets onduidelijk, stel dan eerst een korte vraag.
 - **Ideeën buiten de taak:** voorstellen en op `ROADMAP.md` zetten met een nieuw W-nummer, niet ongevraagd bouwen.
 - **PWA-Core:** bestanden in `core-manifest.json` (`js/core/*`, `css/base.css`) pas je hier niet aan. Een fix daarin hoort in `Gertjun/PWA-Core`; meld het. Een nieuwe Core-release komt via een eigen PR met een nieuwe pin (D12).
+- **Interface:** volg `ui-ux-richtlijnen.md` en `html-best-practices.md` uit de projectkennis, en loop de checklist uit de richtlijnen na vóór je een scherm oplevert.
 - **Vaste regels** (datamodel, grafstenen, gegevensversie, service worker, CSP, beveiliging, stijl, toegankelijkheid, bestanden aanbieden): zie `ARCHITECTUUR.md`.
 - **Nooit:** force-pushen, de geschiedenis herschrijven, branches verwijderen, of iets doen met de data-repository of tokens.
 

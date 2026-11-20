@@ -159,12 +159,17 @@ Back-up en export lopen via `saveFile()` uit `js/core/dom.js`: op de iPhone het 
 
 ## Stijl en indeling
 
+Voor elk nieuw scherm, onderdeel of elke wijziging aan de interface gelden de regels in **`ui-ux-richtlijnen.md`** uit de projectkennis (tokens, raster, kleur en contrast, typografie, aanraakdoelen, staten, formulieren, lege en foutschermen, animatie, toegankelijkheid en de checklist vóór oplevering). Voor HTML gelden de regels in **`html-best-practices.md`**. Wijk je af, noteer dan de reden. Hoe de richtlijnen in deze app worden toegepast:
+
+- **Tokens:** de app gebruikt zijn eigen kleurnamen (`--accent`, `--bg`, `--surface`, `--text`, `--muted`, `--border`), niet de namen uit de richtlijnen (`--color-primary`, `--color-bg` …). Gebruik de bestaande namen; hernoem ze niet ongevraagd. Een afstandsschaal (`--space-*`) is er nog niet (W20).
+- Lettergroottes in `rem`.
+- Bewegingen hebben een uitzondering voor `prefers-reduced-motion`.
 - Kleuren alleen via de CSS-variabelen in `css/app.css` (`--accent`, `--bg`, `--surface`, `--text`, `--muted`, `--border`, `--brand-gradient` enz.), met een licht en een donker thema (`prefers-color-scheme`). Geen vaste kleuren in de rest van de CSS. Platformlabels krijgen hun kleur via `data-platform`.
 - Huisstijl: blauw-violet verloop (`--brand-blue` → `--brand-violet`), accent `#5b5cf0`.
 - Elke kaart in het raster is even groot (D2). Statusfilter: chips op de iPhone, keuzelijst op iPad en laptop (D6).
 - Mobiel eerst: knoppen minimaal 44 px, invoervelden met 16 px tekst, rekening houden met safe areas (ook de iPad).
 - Tabellen en grafieken (Analyse) passen op het scherm zonder schuifbalk opzij.
-- Toegankelijkheid (WCAG 2.2 AA): iconknoppen met `aria-label`, formulieren met zichtbare labels. Voor HTML gelden de regels in `html-best-practices.md` uit de projectkennis.
+- Toegankelijkheid (WCAG 2.2 AA): iconknoppen met `aria-label`, formulieren met zichtbare labels, contrast gecontroleerd in licht én donker.
 
 ## Testen
 
