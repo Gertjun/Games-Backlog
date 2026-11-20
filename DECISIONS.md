@@ -2,7 +2,11 @@
 
 Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; een nieuw besluit vervangt een oud ("vervangt D3").
 
-### D12 – PWA-Core is de centrale gedeelde kern (17 nov 2026)\n- **Besluit:** wijzigingen aan gedeelde kernfunctionaliteit worden eerst in `Gertjun/PWA-Core` ontwikkeld en als officiële, onveranderlijke release gepubliceerd. Apps pinnen een specifieke Core-release met commit en manifestchecksum; een upgrade gebeurt per app via een gecontroleerde PR. Geen automatische kopieeractie naar alle apps of de oude template.\n- **Waarom:** één controleerbare bron voorkomt dat gedeelde code tussen apps uiteenloopt en voorkomt onbedoelde verspreiding van app-specifieke wijzigingen.\n\n### D11 – Verwijderhistorie via PWA-Core deletion ledger (12 nov 2026)
+### D12 – PWA-Core is de centrale gedeelde kern (17 nov 2026)
+- **Besluit:** wijzigingen aan gedeelde kernfunctionaliteit worden eerst in `Gertjun/PWA-Core` ontwikkeld en als officiële, onveranderlijke release gepubliceerd. Apps pinnen een specifieke Core-release met commit en manifestchecksum; een upgrade gebeurt per app via een gecontroleerde PR. Geen automatische kopieeractie naar alle apps of de oude template.
+- **Waarom:** één controleerbare bron voorkomt dat gedeelde code tussen apps uiteenloopt en voorkomt onbedoelde verspreiding van app-specifieke wijzigingen.
+
+### D11 – Verwijderhistorie via PWA-Core deletion ledger (12 nov 2026)
 - **Besluit:** `games` en `gameInfo` ruimen tombstones niet meer op basis van leeftijd op. De Core registreert verwijderingen in `__pwaSync` en verwijdert tombstones pas nadat alle actieve apparaten de verwijdering hebben bevestigd. De blijvende graveyard voorkomt dat oude back-ups of apparaten verwijderde records terugzetten.
 - **Waarom:** een apparaat kan langer dan 180 dagen offline zijn; een tijdgebaseerde purge kan dan verwijderingen verliezen. App-schema 9 blijft ongewijzigd.
 
@@ -45,3 +49,8 @@ Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; e
 - **Besluit:** vier bestanden houden de app bij. Heden: `README.md`, met bovenaan een beschrijving van Games Backlog en een blok "Stand" (vervangt `NOTES.md`; geen sessielog meer). Toekomst: `ROADMAP.md`, de enige takenlijst; punten houden hun nummer en gebouwde punten verdwijnen eruit (vervangt `WISHLIST.md`). Verleden: `CHANGELOG.md` (wat) en `DECISIONS.md` (waarom). Een wijziging alleen aan deze documenten krijgt geen nieuwe appversie.
 - **Waarom:** NOTES, WISHLIST en de changelog herhaalden elkaar en liepen uit de pas (NOTES noemde PR #5 nog als voorstel). Dezelfde indeling geldt voor al Geerts projecten.
 
+### D13 – Uniforme opbouw van documenten en werkwijze (20 nov 2026)
+- **Besluit:** zes bestanden, elk onderwerp op één plek. Heden: `README.md` (wat de app doet, blok "Stand", synchronisatie instellen) en het nieuwe `ARCHITECTUUR.md` (opbouw, aansluiting op PWA-Core, datamodel, conventies, stijl, beveiligingsmodel). Het deel "Technische basis (uit de PWA-template)" in `README.md` is vervallen; wat voor deze app geldt staat nu in `ARCHITECTUUR.md`. Toekomst: `ROADMAP.md`, met vaste W-nummers (de punten #2–#17 heten nu W2–W17). Verleden: `CHANGELOG.md` en `DECISIONS.md`. Werkwijze: `CLAUDE.md`. Een kopie van README, ARCHITECTUUR, ROADMAP en DECISIONS staat ook in de projectkennis van het Claude-project (map `claude/`). Vervangt D11 (documenten, 20 nov) voor de indeling.
+- **Werkwijze:** elke wijziging gaat via een branch `claude/…` en een pull request, en pas na akkoord van Geert naar `main`. `CLAUDE.md` verwijst niet meer naar de PWA-template; de gedeelde kern is PWA-Core en wordt hier niet aangepast (D12).
+- **Let op:** er zijn twee besluiten met nummer D11 (verwijderhistorie, 12 nov, en documenten, 20 nov). Ze blijven zo staan; noem bij een verwijzing het onderwerp erbij.
+- **Waarom:** Geert wil al zijn apps dezelfde opbouw geven, zodat elke sessie op dezelfde plekken begint. Een pull request met akkoord voorkomt dat een fout ongezien op zijn telefoon belandt.
