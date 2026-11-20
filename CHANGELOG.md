@@ -1,3 +1,5 @@
+# Changelog
+
 ## 1.34.3 – 2026-11-17
 
 **Gewijzigd**
@@ -6,7 +8,6 @@
 
 Bestaande kluis, opslagprefix, datapad, schema 9 en biometrische opslag blijven behouden.
 
-# Changelog
 
 ## 1.34.2 – 2026-11-12
 
