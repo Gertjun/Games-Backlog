@@ -13,7 +13,7 @@ Elk onderwerp staat op één plek (D11).
 | Verleden | Wat is er per versie veranderd? | [`CHANGELOG.md`](CHANGELOG.md) |
 | Verleden | Waarom is iets zo gekozen? | [`DECISIONS.md`](DECISIONS.md) |
 
-Werkafspraken voor Claude: [`CLAUDE.md`](CLAUDE.md). De map `docs/` en het deel "Technische basis" hieronder komen uit het PWA-template en beschrijven hoe een nieuwe app wordt opgezet; ze worden hier niet bijgewerkt.
+Werkafspraken voor Claude: [`CLAUDE.md`](CLAUDE.md). Het deel "Technische basis" hieronder komt uit het PWA-template en beschrijft de werking van de schil, de configuratie en de synchronisatie.
 
 ## Stand
 
@@ -38,8 +38,6 @@ Basis voor installeerbare Progressive Web Apps op GitHub Pages, met:
 - Veilig bij **meerdere tabbladen** en bij **verschillende app-versies** op je apparaten
 - Geen frameworks, geen build-stap en geen externe libraries: alleen HTML, CSS en JavaScript-modules
 
-De meegeleverde demo, een lijstje met items, laat zien hoe alles samenwerkt. Voor een nieuwe app vervang je alleen `js/app.js` en `css/app.css` en pas je de configuratie aan.
-
 ---
 
 ## Structuur
@@ -63,38 +61,8 @@ js/core/                De template-kern (niet aanpassen per app)
   records.js            Hulpfuncties voor records (id, updatedAt, verwijderen, opruimen)
   dom.js                h(), formatEuro(), parseEuro(), today(), saveFile()
 icons/                  App-iconen (icon-1024.png is de bron)                ← per app
-docs/CLAUDE-INSTRUCTIES.md   Instructies om in je Claude-project te plakken
-docs/STARTPROMPT.md     Eerste bericht voor een nieuw app-project
 CHANGELOG.md            Wijzigingen per versie
-tools/setup.mjs         Stelt een nieuwe app in (naam, kleur, iconen)
-.github/workflows/setup.yml  Draait setup.mjs automatisch na "Use this template"
 ```
-
-## Eenmalig: de template-repo klaarzetten
-
-1. Maak op GitHub een repo met de naam **`pwa-template`**. De automatische setup slaat een repo met precies deze naam over, zodat de template zelf nooit wordt omgebouwd.
-2. Upload alle bestanden, **inclusief de verborgen map `.github`**. Op een Mac zie je die in Finder pas na ⌘ + Shift + . (punt).
-3. Settings → vink **Template repository** aan.
-
-## Nieuwe app starten
-
-1. Ga naar de template-repo → **Use this template** → *Create a new repository*. Kies een reponaam zoals `vaste-lasten`; de app heet dan "Vaste Lasten".
-2. **Wacht ongeveer een minuut.** De workflow *Nieuwe app instellen* (tabblad Actions) zet dan automatisch:
-   - naam, korte naam, `storagePrefix` en datapad (afgeleid van de reponaam),
-   - versie `1.0.0` in `config.js` en `sw.js`,
-   - manifest, `<title>` en de iPhone-titel,
-   - een lege `CHANGELOG.md`,
-   - en probeert GitHub Pages aan te zetten.
-3. **Eigen naam, kleur of icoonletter?** Ga naar Actions → *Nieuwe app instellen* → **Run workflow**, vul de velden in en vink *Opnieuw instellen* aan. De kleur en de iconen (alle formaten) worden dan ook gemaakt.
-4. **GitHub Pages**: de samenvatting van de workflow laat zien of dit gelukt is. Zo niet, dan is het één klik: Settings → Pages → *Deploy from a branch* → `main` / `(root)` → Save.
-5. **De app bouwen** doe je met Claude: maak een Claude-project, plak `docs/CLAUDE-INSTRUCTIES.md` in de instructies en vul de reponaam in. Claude werkt dan direct in de repo (`js/app.js` en `css/app.css`), test lokaal en pusht naar `main`. Begin het gesprek met de prompt uit `docs/STARTPROMPT.md`. Gebruikt de app een externe API, dan moet het domein in `connect-src` van de CSP in `index.html`; dat staat in de instructies voor Claude.
-6. **Op je iPhone installeren**: open `https://<gebruiker>.github.io/<repo>/` in Safari → Deel → *Zet op beginscherm*.
-
-> **Workflow faalt bij "Wijzigingen opslaan"?** Zet dan in de nieuwe repo Settings → Actions → General → *Workflow permissions* op **Read and write permissions** en start de workflow opnieuw via Run workflow.
-
-> **Liever lokaal?** `npm install --no-save --prefix tools sharp@0.33.5` en daarna `APP_NAME="Mijn App" APP_COLOR="#0f766e" ICON_TEXT="M" node tools/setup.mjs`. Zie de uitleg bovenin `tools/setup.mjs`.
-
-> **Waarom een unieke `storagePrefix`?** Al je apps op `<gebruiker>.github.io` delen dezelfde "origin" en daarmee dezelfde localStorage. Zonder unieke prefix overschrijven ze elkaars gegevens. De setup gebruikt daarom de reponaam. Wijzig de prefix niet meer zodra de app in gebruik is.
 
 ## Configuratie (`js/config.js`)
 

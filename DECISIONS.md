@@ -45,3 +45,6 @@ Besluiten die een volgende sessie moet kennen. Oude besluiten pas je niet aan; e
 - **Besluit:** vier bestanden houden de app bij. Heden: `README.md`, met bovenaan een beschrijving van Games Backlog en een blok "Stand" (vervangt `NOTES.md`; geen sessielog meer). Toekomst: `ROADMAP.md`, de enige takenlijst; punten houden hun nummer en gebouwde punten verdwijnen eruit (vervangt `WISHLIST.md`). Verleden: `CHANGELOG.md` (wat) en `DECISIONS.md` (waarom). Een wijziging alleen aan deze documenten krijgt geen nieuwe appversie.
 - **Waarom:** NOTES, WISHLIST en de changelog herhaalden elkaar en liepen uit de pas (NOTES noemde PR #5 nog als voorstel). Dezelfde indeling geldt voor al Geerts projecten.
 
+### D12 – Templatebestanden opgeruimd (20 nov 2026)
+- **Besluit:** `docs/CLAUDE-INSTRUCTIES.md`, `docs/STARTPROMPT.md`, `tools/setup.mjs` en de README-hoofdstukken over het klaarzetten van de template en het starten van een nieuwe app zijn verwijderd. Ze horen bij het PWA-template (een nieuwe app opzetten), niet bij Games Backlog. Git bewaart de oude versies; het template zelf staat in `Gertjun/PWA-Template`.
+
