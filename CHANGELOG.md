@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.35.0 – 2026-11-25
+
+- PWA-Core v1.4.0: QR-koppeling en tekstcode zonder PIN of kluiswachtwoord. Deel deze volledige toegang uitsluitend met je eigen apparaat (Core D25). Legacy v2 blijft ondersteund.
+- Opslagprefix, datapad, schema 9 en passkey-opslag blijven ongewijzigd; release-pin en precache bijgewerkt.
+
 ## 1.34.3 – 2026-11-17
 
 **Gewijzigd**

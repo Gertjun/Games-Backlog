@@ -723,6 +723,13 @@ dialog.sheet.settings[data-mode="page"][open] { display: block; }
 .pair-pin { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; }
 .pair-pin strong { font: 700 1.5rem/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.08em; }
 dialog.pair-sheet .sheet-body { padding-top: 16px; }
+/* QR-code (js/core/pairing-ui.js): altijd zwart op wit, ook in het donkere thema, zodat camera's hem lezen. */
+.pair-qr {
+  display: block; width: min(100%, 320px); height: auto; aspect-ratio: 1; margin: 0 auto; padding: 12px;
+  background: #fff; border-radius: var(--radius-sm); image-rendering: pixelated;
+}
+.pair-code-details summary, .setup-manual summary { cursor: pointer; color: var(--muted); }
+.pair-code-details[open] summary, .setup-manual[open] summary { margin-bottom: 10px; }
 
 /* ---------- Bouwstenen (js/core/ui.js) ---------- */
 /* Filter: chips op de telefoon, keuzelijst op iPad en laptop. */

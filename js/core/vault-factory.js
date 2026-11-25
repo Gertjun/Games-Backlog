@@ -3,6 +3,8 @@ import * as c from './crypto.js';
 import { SYSTEM_KEY, collectDeletions, mergeSyncStates, registerDevice, acknowledgeDeletions, deactivateDevice, reconcileData, reconcileBackup, applyDeletionLedger } from './deletions.js';
 
 const activePrefixes = new Set();
+const MIN_KDF_ITERATIONS = 100_000;
+const MAX_KDF_ITERATIONS = 2_000_000;
 
 export class DuplicateVaultInstanceError extends Error {
   constructor(prefix) { super(`Er bestaat al een kluisinstantie voor opslagprefix "${prefix}" in deze runtime.`); this.name = 'DuplicateVaultInstanceError'; }
@@ -10,7 +12,9 @@ export class DuplicateVaultInstanceError extends Error {
 
 export function createVault({ storagePrefix, kdfIterations, storage = globalThis.localStorage } = {}) {
   if (typeof storagePrefix !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/i.test(storagePrefix)) throw new TypeError('storagePrefix moet één stabiel namespace-segment zijn (letters, cijfers, punt, underscore of koppelteken; geen dubbele punt).');
-  if (!Number.isSafeInteger(kdfIterations) || kdfIterations < 1) throw new TypeError('kdfIterations moet een positief geheel getal zijn.');
+  if (!Number.isSafeInteger(kdfIterations) || kdfIterations < MIN_KDF_ITERATIONS || kdfIterations > MAX_KDF_ITERATIONS) {
+    throw new TypeError('kdfIterations moet tussen ' + MIN_KDF_ITERATIONS + ' en ' + MAX_KDF_ITERATIONS + ' liggen.');
+  }
   if (!storage || !Number.isInteger(storage.length) || !['getItem','setItem','removeItem','key'].every((key) => typeof storage[key] === 'function')) throw new TypeError('storage voldoet niet aan het Storage-contract.');
   const P = storagePrefix;
   if (activePrefixes.has(P)) throw new DuplicateVaultInstanceError(P);
@@ -159,6 +163,16 @@ function validateEnvelope(env) {
   if (env.version > FORMAT_VERSION) {
     throw new Error('Dit kluisbestand is gemaakt met een nieuwere versie van de app. Werk de app eerst bij.');
   }
+  if (env.version !== FORMAT_VERSION) throw new Error('Dit is geen geldig kluisbestand.');
+  if (env.kdf.name !== 'PBKDF2-SHA256' || !Number.isSafeInteger(env.kdf.iterations) ||
+      env.kdf.iterations < MIN_KDF_ITERATIONS || env.kdf.iterations > MAX_KDF_ITERATIONS) {
+    throw new Error('Dit kluisbestand heeft onveilige of ongeldige wachtwoordinstellingen.');
+  }
+  let salt;
+  try { salt = c.b64ToBytes(env.kdf.salt); } catch { /* hieronder afgewezen */ }
+  if (!(salt instanceof Uint8Array) || salt.length !== 16) {
+    throw new Error('Dit kluisbestand heeft een ongeldige wachtwoordsalt.');
+  }
 }
 
 const hasVault = () => load(KEYS.vault) !== null;
@@ -248,6 +262,60 @@ async function importEnvelope(env, password) {
   await flush();
   save(KEYS.vault, env);
   installEnvelope(env, key, plain);
+}
+
+/** Importeert uitsluitend in een lege kluis, met een reeds geautoriseerde datasleutel.
+ * De aanroeper moet de exclusieve app-sessielock bezitten.
+ */
+async function importEnvelopeWithKey(env, key, { deviceSettings, syncMeta } = {}) {
+  assertActive();
+  if (key?.type !== 'secret' || key.algorithm?.name !== 'AES-GCM' ||
+      key.algorithm.length !== 256 || !key.extractable ||
+      !key.usages.includes('encrypt') || !key.usages.includes('decrypt')) {
+    throw new TypeError('Ongeldige kluissleutel.');
+  }
+  const assertEmpty = () => {
+    if (isUnlocked() || storage.getItem(KEYS.vault) !== null) {
+      throw new Error('Op dit apparaat bestaat al een kluis.');
+    }
+  };
+  assertEmpty();
+  const snapshot = structuredClone(env);
+  validateEnvelope(snapshot);
+  const plain = await c.decryptJSON(snapshot.payload, key);
+  const deviceBox = deviceSettings === undefined ? undefined : await c.encryptJSON(deviceSettings, key);
+  const meta = syncMeta === undefined ? undefined : structuredClone(syncMeta);
+  await flush();
+  assertActive();
+  assertEmpty();
+  // Commit the vault last. Until then a failed setup can be retried.
+  // Preserve any pre-existing auxiliary records, even if corrupt.
+  const changes = [
+    ...(deviceBox === undefined ? [] : [[KEYS.device, deviceBox]]),
+    ...(meta === undefined ? [] : [[KEYS.sync, meta]]),
+  ];
+  const previous = changes.map(([name]) => [name, storage.getItem(name)]);
+  let written = 0;
+  try {
+    for (const [name, value] of changes) {
+      save(name, value);
+      written++;
+    }
+    save(KEYS.vault, snapshot);
+  } catch (error) {
+    // Storage.setItem is atomic per key; a failing write does not change it.
+    // A rollback failure leaves only auxiliary records, never a new vault.
+    for (const [name, raw] of previous.slice(0, written).reverse()) {
+      try {
+        if (raw === null) storage.removeItem(name);
+        else storage.setItem(name, raw);
+      } catch {
+        throw new Error('Koppeling niet voltooid; lokale hulpinstellingen konden niet volledig worden hersteld. Probeer opnieuw.', { cause: error });
+      }
+    }
+    throw error;
+  }
+  installEnvelope(snapshot, key, plain);
 }
 
 /** Back-up terugzetten. Overschrijft daarna ook de versie op GitHub. */
@@ -468,5 +536,5 @@ async function setDeviceSettings(settings) {
     activePrefixes.delete(P);
   }
 
-  return { KEYS, WrongPasswordError, StorageWriteError, flush, getStorageStatus, retryFlush, validateEnvelope, hasVault, isUnlocked, getRevision, getPersistedRevision, getData, getEnvelope, createRecoveryEnvelope, createDeviceSettingsRecovery, getDataKey, create, unlockWithPassword, unlockWithKey, importEnvelope, restoreBackup, reloadFromStorage, lock, reset, setData, changePassword, decryptRemote, adoptRemote, markSynced, getSyncMeta, setSyncMeta, updateSyncMeta, getDeviceId, captureDeletionHistory, prepareSyncData, reconcileRemoteData, mergeRemoteData, reconcileRestoredBackup, getSyncDevices, deactivateSyncDevice, getDeviceSettings, setDeviceSettings , dispose, DuplicateVaultInstanceError };
+  return { KEYS, WrongPasswordError, StorageWriteError, flush, getStorageStatus, retryFlush, validateEnvelope, hasVault, isUnlocked, getRevision, getPersistedRevision, getData, getEnvelope, createRecoveryEnvelope, createDeviceSettingsRecovery, getDataKey, create, unlockWithPassword, unlockWithKey, importEnvelope, importEnvelopeWithKey, restoreBackup, reloadFromStorage, lock, reset, setData, changePassword, decryptRemote, adoptRemote, markSynced, getSyncMeta, setSyncMeta, updateSyncMeta, getDeviceId, captureDeletionHistory, prepareSyncData, reconcileRemoteData, mergeRemoteData, reconcileRestoredBackup, getSyncDevices, deactivateSyncDevice, getDeviceSettings, setDeviceSettings , dispose, DuplicateVaultInstanceError };
 }

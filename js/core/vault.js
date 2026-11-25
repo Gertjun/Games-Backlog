@@ -26,6 +26,7 @@ export const create = (...args) => defaultVault.create(...args);
 export const unlockWithPassword = (...args) => defaultVault.unlockWithPassword(...args);
 export const unlockWithKey = (...args) => defaultVault.unlockWithKey(...args);
 export const importEnvelope = (...args) => defaultVault.importEnvelope(...args);
+export const importEnvelopeWithKey = (...args) => defaultVault.importEnvelopeWithKey(...args);
 export const restoreBackup = (...args) => defaultVault.restoreBackup(...args);
 export const reloadFromStorage = (...args) => defaultVault.reloadFromStorage(...args);
 export const lock = (...args) => defaultVault.lock(...args);

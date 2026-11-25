@@ -1,6 +1,6 @@
-// Eén generiek pairing-protocol voor handmatige koppelcodes en QR-overdracht.
-// Apps leveren uitsluitend de minimale synchronisatieconfiguratie, context en PIN aan.
-// PIN-generatie, KDF, encryptie, contextbinding, expiratie en replayregistratie blijven Core-eigendom.
+// Apparaatkoppeling: v2 (PIN-beveiligde sync-configuratie) en v3 (volledige toegang).
+// V3 is een bearer credential: bezit van de code geeft toegang tot de sleutel en token.
+// De vervaltijd en replaycontrole zijn app-beleid, geen intrekking van gekopieerde geheimen.
 
 import { randomBytes } from './crypto.js';
 
@@ -249,6 +249,38 @@ export async function openPairingCode({
   };
 }
 
+/**
+ * Controleert zonder te schrijven of een pairing-ID op dit apparaat al is gebruikt.
+ * Zo kan een app eerst de volledige koppeling uitvoeren en pas daarna markPairingUsed aanroepen.
+ * Fail-closed: beschadigde of ongeldige replayhistorie wordt geweigerd.
+ */
+export function assertPairingNotUsed(storage, pairingId, {
+  storageKey = 'pwa-core:device-pairing:used', now = Date.now(),
+} = {}) {
+  if (!storage || typeof storage.getItem !== 'function') {
+    throw new Error('Lokale opslag voor replaybescherming is niet beschikbaar.');
+  }
+  if (!validatePairingId(pairingId)) throw new TypeError('Ongeldige pairing-ID.');
+  if (typeof storageKey !== 'string' || !/^[A-Za-z0-9._:-]{1,160}$/.test(storageKey)) {
+    throw new TypeError('Ongeldige opslagnaam voor replaybescherming.');
+  }
+  if (!Number.isSafeInteger(now) || now < 0) throw new TypeError('Ongeldig tijdstip.');
+  const stored = storage.getItem(storageKey);
+  if (stored === null) return;
+  let entries;
+  try { entries = JSON.parse(stored); }
+  catch { throw new Error('De lokale replayhistorie is beschadigd; koppelen wordt geweigerd.'); }
+  if (!Array.isArray(entries) || entries.some((entry) =>
+    !entry || !validatePairingId(entry.pairingId) ||
+    !Number.isSafeInteger(entry.usedAt) || entry.usedAt < 0)) {
+    throw new Error('De lokale replayhistorie is ongeldig; koppelen wordt geweigerd.');
+  }
+  if (entries.some((entry) => entry.pairingId === pairingId &&
+    now - entry.usedAt <= 10 * 60 * 1000 && entry.usedAt <= now + 30000)) {
+    throw new Error('Deze koppelcode is op dit apparaat al gebruikt. Maak een nieuwe code.');
+  }
+}
+
 /** Lokale replayregistratie; zonder server is dit geen globale eenmaligheid. */
 export function markPairingUsed(storage, pairingId, {
   storageKey = 'pwa-core:device-pairing:used', now = Date.now(),
@@ -287,3 +319,99 @@ export const PAIRING_KDF_ITERATIONS = KDF_ITERATIONS;
 export const PAIRING_PIN_LENGTH = PIN_LENGTH;
 export const PAIRING_TEXT_MAX_CHARS = MAX_TEXT_CODE_CHARS;
 export const PAIRING_QR_MAX_CHARS = MAX_QR_CODE_CHARS;
+
+
+// V3: een zelfstandige overdrachtscode voor een expliciet geautoriseerde koppeling.
+// De code is geheim, niet versleuteld tegen iemand die de code bezit.
+// Gebruik uitsluitend een URL-fragment (nooit query parameters) voor dit protocol.
+export const FULL_PAIRING_PREFIX = 'PWA-CORE-PAIR-3:';
+
+export async function createFullPairingCode({
+  syncConfig, dataKey, context, now = Date.now(), transport = 'text',
+} = {}) {
+  validateContext(context);
+  validateSyncConfig(syncConfig);
+  const maxChars = maxCodeLength(transport);
+  if (!Number.isSafeInteger(now) || now < 0 || !Number.isSafeInteger(now + TTL_MS)) {
+    throw new TypeError('Ongeldig tijdstip.');
+  }
+  if (dataKey?.type !== 'secret' || dataKey.algorithm?.name !== 'AES-GCM' ||
+      dataKey.algorithm.length !== 256 || !dataKey.extractable ||
+      !dataKey.usages.includes('encrypt') || !dataKey.usages.includes('decrypt')) {
+    throw new TypeError('Ongeldige kluissleutel.');
+  }
+  const pairingId = bytesToBase64Url(randomBytes(24));
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', dataKey));
+  try {
+    const issuedAt = now;
+    const expiresAt = now + TTL_MS;
+    const body = encoder.encode(JSON.stringify({
+      format: FORMAT, version: 3, context, issuedAt, expiresAt, pairingId,
+      syncConfig, dataKey: bytesToBase64Url(raw),
+    }));
+    try {
+      const payload = FULL_PAIRING_PREFIX + bytesToBase64Url(body);
+      if (body.length > MAX_PLAINTEXT_BYTES || payload.length > maxChars) {
+        throw new Error(transport === 'qr'
+          ? 'De koppelgegevens zijn te groot voor één QR-code. Gebruik de handmatige koppelcode.'
+          : 'De handmatige koppelcode is te groot.');
+      }
+      return { payload, pairingId, issuedAt, expiresAt };
+    } finally {
+      body.fill(0);
+    }
+  } finally {
+    raw.fill(0);
+  }
+}
+
+export async function openFullPairingCode({
+  payload, context, now = Date.now(), transport = 'text',
+} = {}) {
+  validateContext(context);
+  const maxChars = maxCodeLength(transport);
+  if (!Number.isSafeInteger(now) || now < 0) throw new TypeError('Ongeldig tijdstip.');
+  if (typeof payload !== 'string' || payload.length > maxChars * 2) {
+    throw new Error('Dit is geen geldige PWA-Core-koppelcode.');
+  }
+  const text = payload.trim().replace(/\s+/g, '');
+  if (!text.startsWith(FULL_PAIRING_PREFIX) || text.length > maxChars) {
+    throw new Error('Dit is geen geldige PWA-Core-koppelcode.');
+  }
+  let decoded;
+  let body;
+  try {
+    body = base64UrlToBytes(text.slice(FULL_PAIRING_PREFIX.length), 'inhoud');
+    if (body.length > MAX_PLAINTEXT_BYTES) throw new Error('Te groot');
+    decoded = JSON.parse(decoder.decode(body));
+  } catch {
+    throw new Error('De koppelcode is beschadigd of onvolledig.');
+  } finally {
+    body?.fill(0);
+  }
+  const fields = ['format', 'version', 'context', 'issuedAt', 'expiresAt', 'pairingId', 'syncConfig', 'dataKey'];
+  if (!decoded || Object.keys(decoded).length !== fields.length ||
+      fields.some(field => !Object.hasOwn(decoded, field)) ||
+      decoded.format !== FORMAT || decoded.version !== 3 || decoded.context !== context ||
+      !validatePairingId(decoded.pairingId) ||
+      !Number.isSafeInteger(decoded.issuedAt) || decoded.issuedAt < 0 ||
+      !Number.isSafeInteger(decoded.expiresAt)) {
+    throw new Error('Deze koppelcode is ongeldig of hoort bij een andere app.');
+  }
+  if (decoded.expiresAt <= now || now - decoded.issuedAt > TTL_MS) {
+    throw new Error('Deze koppelcode is verlopen. Maak op het andere apparaat een nieuwe code.');
+  }
+  if (decoded.issuedAt > now + 30000 || decoded.expiresAt - decoded.issuedAt !== TTL_MS) {
+    throw new Error('De geldigheidsduur van deze koppelcode klopt niet.');
+  }
+  validateSyncConfig(decoded.syncConfig);
+  const raw = base64UrlToBytes(decoded.dataKey, 'kluissleutel');
+  try {
+    if (raw.length !== 32) throw new Error('Ongeldige kluissleutel.');
+    const dataKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    return { syncConfig: decoded.syncConfig, dataKey, pairingId: decoded.pairingId,
+      issuedAt: decoded.issuedAt, expiresAt: decoded.expiresAt };
+  } finally {
+    raw.fill(0);
+  }
+}

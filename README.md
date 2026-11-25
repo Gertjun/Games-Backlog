@@ -17,9 +17,9 @@ Elk onderwerp staat op één plek (D13).
 
 ## Stand
 
-Bijgewerkt: 20 november 2026 · `main` **1.34.4** met PWA-Core v1.3.0. Dit blok wordt aan het eind van elke sessie overschreven.
+Bijgewerkt: 25 november 2026 · migratie-PR **1.35.0** met PWA-Core v1.4.0. Dit blok wordt aan het eind van elke sessie overschreven.
 
-- PWA-Core v1.3.0 met QR-koppeling via PAIR-2 (PR #5) is gemerged; de koppelcode draagt alleen de GitHub Sync-instellingen over, het kluiswachtwoord vul je apart in. Nog niet praktisch getest (W17); de changelog mist 1.34.4 (W16).
+- PWA-Core v1.4.0: gedeelde QR-koppeling zonder PIN of wachtwoord, bestaande v2-codes blijven ondersteund. De code geeft volledige toegang (Core D25). CI en fysieke acceptatie van deze appupdate nog te bevestigen (W17). Historische changelog 1.34.4 ontbreekt nog (W16).
 - Opslagprefix `games-backlog`, datapad `games-backlog/vault.json` en app-schema 9 zijn sinds de overstap naar PWA-Core ongewijzigd.
 - Praktijktest op 18 november (1.34.3): een testspel aanmaken, wijzigen en verwijderen synchroniseerde tussen iPhone en laptop. De gedeelde kern (onder meer offline herstel) is getest via Vaste Lasten, niet opnieuw hier.
 - Hoesafbeeldingen via TheGamesDB wachten op een API-sleutel (W15).
