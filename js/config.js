@@ -6,7 +6,7 @@ export const APP = {
 
   // Semver. Bij ELKE release ook VERSION in sw.js gelijk ophogen,
   // anders krijgen geïnstalleerde apps de update niet.
-  version: '1.34.4',
+  version: '1.35.0',
 
   // UNIEK PER APP. Alle GitHub Pages-sites onder <gebruiker>.github.io
   // delen dezelfde origin en dus dezelfde localStorage. Zonder unieke
@@ -18,6 +18,8 @@ export const APP = {
   // Tip: één data-repo voor al je apps, met per app een eigen map.
   defaultDataPath: 'games-backlog/vault.json',
   defaultBranch: 'main',
+  defaultOwner: 'Gertjun',
+  defaultRepo: 'SyncData',
 
   // Standaardtijd voor automatisch vergrendelen (minuten inactiviteit of op de
   // achtergrond). 0 = uit. Per apparaat aan te passen in Instellingen > Beveiliging.

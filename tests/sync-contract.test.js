@@ -13,7 +13,7 @@ for (const file of ['sync.js', 'sync-factory.js', 'vault.js', 'vault-factory.js'
   await cp(new URL(`../js/core/${file}`, import.meta.url), path.join(root, 'js', 'core', file));
 }
 await writeFile(path.join(root, 'js', 'config.js'), `
-export const APP = { name: 'PWA-Core test', storagePrefix: 'sync-contract-test', kdfIterations: 1000 };
+export const APP = { name: 'PWA-Core test', storagePrefix: 'sync-contract-test', kdfIterations: 100_000 };
 `);
 
 class MemoryStorage {

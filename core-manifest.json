@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "coreVersion": "1.3.0",
+  "coreVersion": "1.4.0",
   "releaseStatus": "released",
   "source": {
     "repository": "Gertjun/PWA-Core",
     "ref": "main",
-    "commit": "fd47638355d975d85dfc376b07810b4b0e4b2a63"
+    "commit": "33c9b185c1cbd39e44a544ceea9d18b86b39eca1"
   },
   "allowlist": [
     "css/base.css",
@@ -18,6 +18,8 @@
     "js/core/github.js",
     "js/core/nav.js",
     "js/core/pair.js",
+    "js/core/pairing-ui.js",
+    "js/core/qrcode.js",
     "js/core/records.js",
     "js/core/session-lock-factory.js",
     "js/core/session-lock.js",
@@ -29,7 +31,7 @@
     "js/core/vault.js"
   ],
   "checksums": {
-    "css/base.css": "9c44c04888f83cb37817a5d06042dc057d841d29f24628908c1d8f65479869d0",
+    "css/base.css": "21a3052425da238051b1fb9e43733c18f2c83c2de2331f9509bdbadbbaa1704a",
     "js/core/biometric-factory.js": "37bb12303c302684a9321293d2755676a02066fcf569828586cbe1ae9a3eea3d",
     "js/core/biometric.js": "e6198102ac261cfb1455124d8782ad33fd0ca7de047b1ed9ee5af077ad0623a4",
     "js/core/crypto.js": "b919c15e021232ce20b0710b1818c87664d6acc794b9d95baf4f14664b7e636f",
@@ -38,15 +40,17 @@
     "js/core/dom.js": "9a2b16ae0fcd5dc547efcca5088f35a532dfe40e94c2cd384f68fce9d913d141",
     "js/core/github.js": "970b1e0b1da88bd93c0ef3a4c3c2aea084403419271f4484a7ffba653e73ecb9",
     "js/core/nav.js": "b2e8b22f80e60e3f81d9317ba304229f87c7b80e16b2ef18774a817b7f194184",
-    "js/core/pair.js": "87824409516057647754ad30e99e6ac9ef010ffe235de35feb566e9d194d841a",
+    "js/core/pair.js": "c730191aab71d2917b2eaeeaefc7bdeb6ddebd734e726fc529da006412837229",
+    "js/core/pairing-ui.js": "78b251ead3abf60a6d541675da8121828f4194cc6917b5e221bdce1fa6ee1be6",
+    "js/core/qrcode.js": "fd9edc6419b5c0137df8529c35f6ea9971f902b3f571bb5406678806b65ba72c",
     "js/core/records.js": "2ca462be79cb967dffffad39df80cfe79ec33133b9b14dd79a6d1c1ecfb6f1cf",
     "js/core/session-lock-factory.js": "991157d938a11860881426871d6e1e818e75fe870b27f2884cd080bc9e0f9398",
     "js/core/session-lock.js": "991a810532b1b9f8b73324d36818805a918b81e7ab552583970af15e6cb1f6d1",
-    "js/core/shell.js": "307f9dcfe87ff3b30ca81bccd059f6ccda701781d9bff1de05bbfd5898e11545",
+    "js/core/shell.js": "408bdbc18dc6a33119b883dedad20e7f26ce4b6de7d9941cafe095722f4d69e1",
     "js/core/sync-factory.js": "3ee86ab79c0ebc87f0d43d3c4789bee1dddc6f2f00f6999dcad28a484c36f17c",
     "js/core/sync.js": "edc71b8447bc556a569cdf324673f36a4937c048bf83bdac8c77cf61526c76d4",
     "js/core/ui.js": "798f2da581b01e48741edaff9751e82df14a6445551dc8d40ac9762559869721",
-    "js/core/vault-factory.js": "30b8c93ca8e939a5fe97f301ef1cf0fd3ff4add892235d9a5881d00a2c33e20d",
-    "js/core/vault.js": "5ba10a4b741e833f5582b3b2df6b26d22af021d280ab6c6cda5a673f10bf3515"
+    "js/core/vault-factory.js": "e6ca8588adf12638725de9b8700fa77f0969341fd598df2b1eee657316a1e8b4",
+    "js/core/vault.js": "432633c62603f6981d56e8950b9bdfe12ad2cf832a303303a4949eeeb50a58a4"
   }
 }

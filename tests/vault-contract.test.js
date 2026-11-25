@@ -14,7 +14,7 @@ for (const file of ['vault.js', 'vault-factory.js', 'crypto.js', 'deletions.js']
   await cp(new URL(`../js/core/${file}`, import.meta.url), path.join(root, 'js', 'core', file));
 }
 await writeFile(path.join(root, 'js', 'config.js'), `
-export const APP = { storagePrefix: 'vault-contract-test', kdfIterations: 1000 };
+export const APP = { storagePrefix: 'vault-contract-test', kdfIterations: 100_000 };
 `);
 
 class MemoryStorage {
@@ -55,7 +55,7 @@ test('create schrijft een geldige versleutelde envelope en bewaart geen plaintex
   assert.equal(env.format, 'pwa-vault');
   assert.equal(env.version, 1);
   assert.equal(env.kdf.name, 'PBKDF2-SHA256');
-  assert.equal(env.kdf.iterations, 1000);
+  assert.equal(env.kdf.iterations, 100_000);
   assert.ok(env.payload.iv && env.payload.data);
 });
 
