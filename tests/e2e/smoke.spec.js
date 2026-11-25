@@ -13,7 +13,10 @@ test('Games Backlog toont het kluisinstelscherm zonder browserfouten', async ({ 
 
   await page.locator('[data-setup-tab="link"]').click();
   await expect(page.locator('#form-setup-link')).toBeVisible();
-  await expect(page.locator('#form-setup-link input[name="token"]')).toBeVisible();
+  const token = page.locator('#form-setup-link input[name="token"]');
+  await expect(token).toBeHidden();
+  await page.locator('#form-setup-link .setup-manual summary').click();
+  await expect(token).toBeVisible();
   await page.locator('[data-setup-tab="new"]').click();
   await expect(page.locator('#form-setup-new')).toBeVisible();
 
